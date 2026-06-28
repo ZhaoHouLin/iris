@@ -1,0 +1,36 @@
+{
+  "name": "privatepicapp",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "dependencies": {
+    "@noble/ciphers": "^2.2.0",
+    "@noble/hashes": "^2.2.0",
+    "expo": "~56.0.12",
+    "expo-crypto": "~56.0.4",
+    "expo-file-system": "~56.0.8",
+    "expo-image-picker": "~56.0.18",
+    "expo-local-authentication": "~56.0.4",
+    "expo-media-library": "~56.0.7",
+    "expo-router": "~56.2.11",
+    "expo-secure-store": "~56.0.4",
+    "expo-status-bar": "~56.0.4",
+    "expo-video": "~56.1.4",
+    "expo-video-thumbnails": "~56.0.3",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-web": "^0.21.2",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
+  },
+  "private": true
+}
