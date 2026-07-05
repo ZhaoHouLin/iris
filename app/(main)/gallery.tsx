@@ -131,7 +131,16 @@ function VideoViewer({ uri, onClose, onDelete, onRestore, onPrev, onNext }: {
       <TouchableOpacity style={styles.viewerClose} onPress={onClose}>
         <FontAwesome5 name="times" size={18} color="#fff" solid />
       </TouchableOpacity>
-      <ViewerActions onDelete={onDelete} onRestore={onRestore} />
+      <View style={styles.videoViewerActions}>
+        <TouchableOpacity style={styles.viewerActionDelete} onPress={onDelete}>
+          <FontAwesome5 name="trash-alt" size={18} color="#ff453a" solid />
+          <Text style={styles.viewerActionDeleteText}>刪除</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.viewerActionRestore} onPress={onRestore}>
+          <FontAwesome5 name="upload" size={18} color="#fff" solid />
+          <Text style={styles.viewerActionRestoreText}>還原到相簿</Text>
+        </TouchableOpacity>
+      </View>
       {onPrev && (
         <TouchableOpacity style={styles.viewerNavLeft} onPress={onPrev} activeOpacity={0.6}>
           <FontAwesome5 name="chevron-left" size={24} color="#fff" solid />
@@ -859,6 +868,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#c01848',
   },
   viewerActionRestoreText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  videoViewerActions: {
+    position: 'absolute', top: 108, left: 20, right: 20,
+    flexDirection: 'row', gap: 10,
+  },
   viewerNavLeft: {
     position: 'absolute', left: 0, top: 80, bottom: 120,
     width: 52, justifyContent: 'center', alignItems: 'center',
