@@ -5,7 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '../src/store/authStore';
 import { useMediaStore } from '../src/store/mediaStore';
 
-const AUTO_LOCK_MS = 30_000;
+const AUTO_LOCK_MS = 3_000;
 
 function AuthGuard() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -19,7 +19,7 @@ function AuthGuard() {
   // Auto-lock on background
   useEffect(() => {
     const handleAppState = async (next: AppStateStatus) => {
-      if (next === 'background' || next === 'inactive') {
+      if (next === 'background') {
         backgroundedAt.current = Date.now();
       } else if (next === 'active') {
         if (

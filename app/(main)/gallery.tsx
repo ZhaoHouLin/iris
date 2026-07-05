@@ -111,7 +111,7 @@ function VideoViewer({ uri, onClose, onDelete, onRestore }: {
   return (
     <View style={styles.viewer}>
       <StatusBar hidden />
-      <VideoView player={player} style={styles.viewerImage} contentFit="contain" allowsFullscreen />
+      <VideoView player={player} style={styles.viewerImage} contentFit="contain" />
       <TouchableOpacity style={styles.viewerClose} onPress={onClose}>
         <Text style={styles.viewerCloseText}>✕</Text>
       </TouchableOpacity>
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
   // Selection
   thumbSelected: { opacity: 0.75 },
   selectOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(124,111,247,0.35)',
     alignItems: 'flex-end', justifyContent: 'flex-end',
     padding: 4,
