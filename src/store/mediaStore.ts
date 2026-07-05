@@ -7,6 +7,7 @@ export interface Folder {
   id: string;
   name: string;
   createdAt: number;
+  coverId?: string;
 }
 
 export interface VaultEntry {
@@ -34,6 +35,7 @@ interface MediaStore {
   deleteFolder: (id: string) => Promise<void>;
   renameFolder: (id: string, name: string) => Promise<void>;
   moveToFolder: (entryId: string, folderId: string | null) => Promise<void>;
+  setFolderCover: (folderId: string, entryId: string) => Promise<void>;
   addMedia: (
     sourcePath: string,
     filename: string,
@@ -109,6 +111,12 @@ export const useMediaStore = create<MediaStore>((set, get) => ({
 
   renameFolder: async (id, name) => {
     const newFolders = get().folders.map(f => f.id === id ? { ...f, name } : f);
+    set({ folders: newFolders });
+    await saveFolders(newFolders);
+  },
+
+  setFolderCover: async (folderId, entryId) => {
+    const newFolders = get().folders.map(f => f.id === folderId ? { ...f, coverId: entryId } : f);
     set({ folders: newFolders });
     await saveFolders(newFolders);
   },

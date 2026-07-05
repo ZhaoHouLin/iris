@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  ScrollView,
   Image,
   TouchableOpacity,
   Dimensions,
@@ -17,7 +18,7 @@ import * as MediaLibrary from 'expo-media-library/legacy';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import { useMediaStore } from '../../src/store/mediaStore';
+import { useMediaStore, Folder } from '../../src/store/mediaStore';
 
 const { width } = Dimensions.get('window');
 const COLS = 3;
@@ -162,6 +163,41 @@ function NameModal({ visible, title, initialValue, onConfirm, onCancel }: {
   );
 }
 
+// ─── Move modal ───────────────────────────────────────────────────────────────
+
+function MoveModal({ visible, folders, onSelect, onClose }: {
+  visible: boolean;
+  folders: Folder[];
+  onSelect: (folderId: string | null) => void;
+  onClose: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.moveModalBg}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.moveModalSheet}>
+          <Text style={styles.moveModalTitle}>移動到</Text>
+          <ScrollView bounces={false}>
+            <TouchableOpacity style={styles.moveModalOption} onPress={() => onSelect(null)}>
+              <Text style={styles.moveModalOptionIcon}>🗂</Text>
+              <Text style={styles.moveModalOptionText}>不分類（全部）</Text>
+            </TouchableOpacity>
+            {folders.map(f => (
+              <TouchableOpacity key={f.id} style={styles.moveModalOption} onPress={() => onSelect(f.id)}>
+                <Text style={styles.moveModalOptionIcon}>📁</Text>
+                <Text style={styles.moveModalOptionText}>{f.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <TouchableOpacity style={styles.moveModalCancelBtn} onPress={onClose}>
+            <Text style={styles.moveModalCancelText}>取消</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function GalleryScreen() {
@@ -169,7 +205,7 @@ export default function GalleryScreen() {
     entries, folders,
     loadIndex, loadFolders,
     removeMedia, getTempDecryptedPath, getVideoThumbPath,
-    createFolder, deleteFolder, renameFolder, moveToFolder,
+    createFolder, deleteFolder, renameFolder, moveToFolder, setFolderCover,
   } = useMediaStore();
 
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
@@ -181,6 +217,17 @@ export default function GalleryScreen() {
   const [renameModal, setRenameModal] = useState(false);
   const [renamingFolderId, setRenamingFolderId] = useState<string>('');
   const [renamingName, setRenamingName] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [moveModal, setMoveModal] = useState(false);
+  const [isEditingFolders, setIsEditingFolders] = useState(false);
+
+  const isSelecting = selectedIds.size > 0;
+  const toggleSelect = (id: string) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const exitSelect = () => setSelectedIds(new Set());
 
   const viewingEntry = viewingId ? entries.find(e => e.id === viewingId) : null;
   const isViewingVideo = viewingEntry?.mimeType.startsWith('video/') ?? false;
@@ -253,20 +300,8 @@ export default function GalleryScreen() {
   // ── Item actions ──
 
   const handleItemLongPress = (id: string) => {
-    const entry = entries.find(e => e.id === id);
-    if (!entry) return;
-    const moveOptions = folders
-      .filter(f => f.id !== entry.folderId)
-      .map(f => ({ text: `移至「${f.name}」`, onPress: () => moveToFolder(id, f.id) }));
-    const removeOption = entry.folderId
-      ? [{ text: '移出資料夾', onPress: () => moveToFolder(id, null) }]
-      : [];
-    Alert.alert('操作', '', [
-      ...moveOptions,
-      ...removeOption,
-      { text: '刪除', style: 'destructive' as const, onPress: () => confirmDelete(id) },
-      { text: '取消', style: 'cancel' as const },
-    ]);
+    if (isSelecting) return;
+    setSelectedIds(new Set([id]));
   };
 
   const confirmDelete = (id: string) => {
@@ -281,6 +316,29 @@ export default function GalleryScreen() {
         },
       },
     ]);
+  };
+
+  const handleBatchDelete = () => {
+    const count = selectedIds.size;
+    Alert.alert('刪除', `確定要永久刪除這 ${count} 個檔案嗎？`, [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '刪除', style: 'destructive',
+        onPress: async () => {
+          const ids = [...selectedIds];
+          exitSelect();
+          setThumbs(prev => { const n = { ...prev }; ids.forEach(id => delete n[id]); return n; });
+          for (const id of ids) await removeMedia(id);
+        },
+      },
+    ]);
+  };
+
+  const handleBatchMove = async (targetFolderId: string | null) => {
+    const ids = [...selectedIds];
+    setMoveModal(false);
+    exitSelect();
+    for (const id of ids) await moveToFolder(id, targetFolderId);
   };
 
   // ── Folder actions ──
@@ -314,27 +372,40 @@ export default function GalleryScreen() {
 
   // ── Render helpers ──
 
-  const renderMediaItem = ({ item }: { item: typeof entries[0] }) => (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={() => openViewer(item.id)}
-      onLongPress={() => handleItemLongPress(item.id)}
-      style={styles.item}
-    >
-      {thumbs[item.id] ? (
-        <View style={styles.thumb}>
-          <Image source={{ uri: thumbs[item.id] }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-          {item.mimeType.startsWith('video/') && (
-            <View style={styles.playBadge}><Text style={styles.playBadgeIcon}>▶</Text></View>
-          )}
-        </View>
-      ) : (
-        <View style={[styles.thumb, styles.placeholder]}>
-          <Text style={styles.placeholderIcon}>{item.mimeType.startsWith('video/') ? '▶' : '📷'}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
+  const renderMediaItem = ({ item }: { item: typeof entries[0] }) => {
+    const isSelected = selectedIds.has(item.id);
+    return (
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => isSelecting ? toggleSelect(item.id) : openViewer(item.id)}
+        onLongPress={() => handleItemLongPress(item.id)}
+        style={styles.item}
+      >
+        {thumbs[item.id] ? (
+          <View style={[styles.thumb, isSelected && styles.thumbSelected]}>
+            <Image source={{ uri: thumbs[item.id] }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            {item.mimeType.startsWith('video/') && !isSelected && (
+              <View style={styles.playBadge}><Text style={styles.playBadgeIcon}>▶</Text></View>
+            )}
+            {isSelected && (
+              <View style={styles.selectOverlay}>
+                <View style={styles.selectCheck}><Text style={styles.selectCheckMark}>✓</Text></View>
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={[styles.thumb, styles.placeholder, isSelected && styles.thumbSelected]}>
+            <Text style={styles.placeholderIcon}>{item.mimeType.startsWith('video/') ? '▶' : '📷'}</Text>
+            {isSelected && (
+              <View style={styles.selectOverlay}>
+                <View style={styles.selectCheck}><Text style={styles.selectCheckMark}>✓</Text></View>
+              </View>
+            )}
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   type FolderItem = { key: string; kind: 'all' | 'folder'; id?: string; name?: string };
   const folderItems: FolderItem[] = [
@@ -343,25 +414,54 @@ export default function GalleryScreen() {
   ];
 
   const renderFolderItem = ({ item }: { item: FolderItem }) => {
-    if (item.kind === 'all') {
-      return (
-        <TouchableOpacity style={styles.folderCard} onPress={() => setCurrentFolderId(ALL_ID)}>
-          <Text style={styles.folderCardIcon}>🗂</Text>
-          <Text style={styles.folderCardName}>全部</Text>
-          <Text style={styles.folderCardCount}>{entries.length} 個</Text>
-        </TouchableOpacity>
+    const isAll = item.kind === 'all';
+    const folderId = isAll ? ALL_ID : item.id!;
+    const name = isAll ? '全部' : item.name!;
+    const count = isAll ? entries.length : entries.filter(e => e.folderId === item.id).length;
+    const folder = !isAll ? folders.find(f => f.id === item.id) : null;
+    const sourceEntries = isAll ? entries : entries.filter(e => e.folderId === item.id);
+    const coverEntry = (folder?.coverId && thumbs[folder.coverId])
+      ? { id: folder.coverId }
+      : sourceEntries.find(e => thumbs[e.id]);
+    const coverUri = coverEntry ? thumbs[coverEntry.id] : null;
+
+    const handleFolderPress = () => {
+      if (isEditingFolders) return;
+      setCurrentFolderId(folderId);
+    };
+
+    const confirmDeleteFolder = () => {
+      Alert.alert(
+        '刪除資料夾',
+        `刪除「${name}」後，其中的檔案將移至全部`,
+        [
+          { text: '取消', style: 'cancel' },
+          { text: '刪除', style: 'destructive', onPress: () => deleteFolder(item.id!) },
+        ]
       );
-    }
-    const count = entries.filter(e => e.folderId === item.id).length;
+    };
+
     return (
       <TouchableOpacity
         style={styles.folderCard}
-        onPress={() => setCurrentFolderId(item.id!)}
-        onLongPress={() => handleFolderLongPress(item.id!)}
+        onPress={handleFolderPress}
+        onLongPress={!isAll && !isEditingFolders ? () => handleFolderLongPress(item.id!) : undefined}
+        activeOpacity={isEditingFolders ? 1 : 0.8}
       >
-        <Text style={styles.folderCardIcon}>📁</Text>
-        <Text style={styles.folderCardName} numberOfLines={2}>{item.name}</Text>
-        <Text style={styles.folderCardCount}>{count} 個</Text>
+        {coverUri
+          ? <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          : <Text style={styles.folderCardIcon}>{isAll ? '🗂' : '📁'}</Text>
+        }
+        <View style={styles.folderCardOverlay} />
+        <View style={styles.folderCardFooter}>
+          <Text style={styles.folderCardName} numberOfLines={1}>{name}</Text>
+          <Text style={styles.folderCardCount}>{count} 個</Text>
+        </View>
+        {isEditingFolders && !isAll && (
+          <TouchableOpacity style={styles.folderDeleteBadge} onPress={confirmDeleteFolder}>
+            <Text style={styles.folderDeleteBadgeText}>✕</Text>
+          </TouchableOpacity>
+        )}
       </TouchableOpacity>
     );
   };
@@ -375,9 +475,29 @@ export default function GalleryScreen() {
       {currentFolderId === null ? (
         <View style={styles.header}>
           <Text style={styles.title}>私密相簿</Text>
-          <TouchableOpacity style={styles.addFolderBtn} onPress={() => setNewFolderModal(true)}>
-            <Text style={styles.addFolderBtnText}>＋ 資料夾</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {isEditingFolders ? (
+              <TouchableOpacity style={styles.addFolderBtn} onPress={() => setIsEditingFolders(false)}>
+                <Text style={styles.addFolderBtnText}>完成</Text>
+              </TouchableOpacity>
+            ) : (
+              <>
+                <TouchableOpacity style={styles.addFolderBtn} onPress={() => setIsEditingFolders(true)}>
+                  <Text style={styles.addFolderBtnText}>編輯</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.addFolderBtn} onPress={() => setNewFolderModal(true)}>
+                  <Text style={styles.addFolderBtnText}>＋ 資料夾</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      ) : isSelecting ? (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={exitSelect} style={styles.selectCancelBtn}>
+            <Text style={styles.selectCancelText}>✕</Text>
           </TouchableOpacity>
+          <Text style={styles.selectCountTitle}>已選 {selectedIds.size} 個</Text>
         </View>
       ) : (
         <View style={styles.header}>
@@ -445,6 +565,34 @@ export default function GalleryScreen() {
         )}
       </Modal>
 
+      {/* Selection action bar */}
+      {isSelecting && (
+        <View style={styles.selectBar}>
+          {selectedIds.size === 1 && currentFolderId && currentFolderId !== ALL_ID && (
+            <TouchableOpacity style={styles.selectBarBtn} onPress={() => {
+              setFolderCover(currentFolderId, [...selectedIds][0]);
+              exitSelect();
+            }}>
+              <Text style={styles.selectBarBtnText}>封面</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.selectBarBtn} onPress={() => setMoveModal(true)}>
+            <Text style={styles.selectBarBtnText}>移動</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.selectBarBtn, styles.selectBarBtnDelete]} onPress={handleBatchDelete}>
+            <Text style={[styles.selectBarBtnText, styles.selectBarBtnDeleteText]}>刪除</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Move modal */}
+      <MoveModal
+        visible={moveModal}
+        folders={folders}
+        onSelect={handleBatchMove}
+        onClose={() => setMoveModal(false)}
+      />
+
       {/* New folder modal */}
       <NameModal
         visible={newFolderModal}
@@ -499,14 +647,32 @@ const styles = StyleSheet.create({
     height: FOLDER_CARD_SIZE,
     backgroundColor: '#1e1e30',
     borderRadius: 16,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    padding: 12,
   },
   folderCardIcon: { fontSize: 44 },
-  folderCardName: { color: '#ffffff', fontSize: 15, fontWeight: '600', textAlign: 'center' },
-  folderCardCount: { color: '#555570', fontSize: 12 },
+  folderDeleteBadge: {
+    position: 'absolute', top: 6, left: 6,
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: '#ff453a',
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4, elevation: 4,
+  },
+  folderDeleteBadgeText: { color: '#fff', fontSize: 13, fontWeight: '700', lineHeight: 16 },
+  folderCardOverlay: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    height: '45%',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  folderCardFooter: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    padding: 10,
+  },
+  folderCardName: { color: '#ffffff', fontSize: 14, fontWeight: '600' },
+  folderCardCount: { color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 },
 
   // Media grid
   grid: { padding: GAP },
@@ -553,6 +719,65 @@ const styles = StyleSheet.create({
   viewerActionIcon: { fontSize: 18 },
   viewerActionLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 15 },
   viewerActionLabelRestore: { color: '#a89cf7', fontWeight: '600' },
+
+  // Selection
+  thumbSelected: { opacity: 0.75 },
+  selectOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(124,111,247,0.35)',
+    alignItems: 'flex-end', justifyContent: 'flex-end',
+    padding: 4,
+  },
+  selectCheck: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: '#7c6ff7', alignItems: 'center', justifyContent: 'center',
+  },
+  selectCheckMark: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  selectCancelBtn: { paddingRight: 12 },
+  selectCancelText: { color: '#7c6ff7', fontSize: 20 },
+  selectCountTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  selectBar: {
+    flexDirection: 'row',
+    backgroundColor: '#1e1e30',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#2a2a40',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 10,
+    justifyContent: 'flex-end',
+  },
+  selectBarBtn: {
+    backgroundColor: '#2a2a40',
+    borderRadius: 14, paddingHorizontal: 20, paddingVertical: 10,
+  },
+  selectBarBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  selectBarBtnDelete: { backgroundColor: 'rgba(255,69,58,0.15)' },
+  selectBarBtnDeleteText: { color: '#ff453a' },
+
+  // Move modal
+  moveModalBg: { flex: 1, justifyContent: 'flex-end' },
+  moveModalSheet: {
+    backgroundColor: '#1e1e30',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingTop: 20, paddingBottom: 40, maxHeight: '60%',
+  },
+  moveModalTitle: {
+    color: '#7c7c9b', fontSize: 13, fontWeight: '600',
+    textTransform: 'uppercase', textAlign: 'center',
+    marginBottom: 8, letterSpacing: 0.5,
+  },
+  moveModalOption: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingHorizontal: 24, paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#2a2a40',
+  },
+  moveModalOptionIcon: { fontSize: 22 },
+  moveModalOptionText: { color: '#fff', fontSize: 16 },
+  moveModalCancelBtn: {
+    marginTop: 8, marginHorizontal: 16, borderRadius: 14,
+    backgroundColor: '#2a2a40', paddingVertical: 14, alignItems: 'center',
+  },
+  moveModalCancelText: { color: '#7c7c9b', fontSize: 16, fontWeight: '600' },
 
   // Modal
   modalOverlay: {
