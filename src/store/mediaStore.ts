@@ -132,8 +132,8 @@ export const useMediaStore = create<MediaStore>((set, get) => ({
   addMedia: async (sourcePath, filename, mimeType, deleteOriginal, folderId) => {
     await ensureVaultDir();
     const id = ExpoCrypto.randomUUID();
-    const isVideo = mimeType.startsWith('video/');
-    const ext = isVideo ? (filename.split('.').pop() ?? 'mp4') : 'enc';
+    const isVideo = mimeType.startsWith('video/') || mimeType === 'image/gif';
+    const ext = isVideo ? (filename.split('.').pop() ?? 'gif') : 'enc';
     const destPath = `${VAULT_DIR}${id}.${ext}`;
 
     if (isVideo) {

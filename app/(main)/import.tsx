@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { BottomActionSheet, SheetConfig } from '../../src/components/BottomActionSheet';
 import {
   View,
   Text,
@@ -59,6 +60,9 @@ export default function ImportScreen() {
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [pendingAssets, setPendingAssets] = useState<ImagePicker.ImagePickerAsset[] | null>(null);
   const [folderModalVisible, setFolderModalVisible] = useState(false);
+  const [sheetConfig, setSheetConfig] = useState<SheetConfig | null>(null);
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const showSheet = (config: SheetConfig) => { setSheetConfig(config); setSheetVisible(true); };
 
   const { addMedia, folders, loadFolders } = useMediaStore();
 
@@ -104,14 +108,14 @@ export default function ImportScreen() {
     const assets = pendingAssets;
     setPendingAssets(null);
 
-    Alert.alert(
-      '匯入設定',
-      `已選擇 ${assets.length} 個檔案\n匯入後要刪除相簿中的原始檔案嗎？`,
-      [
-        { text: '保留原始檔案', onPress: () => doImport(assets, false, folderId) },
-        { text: '刪除原始檔案', style: 'destructive', onPress: () => doImport(assets, true, folderId) },
-      ]
-    );
+    showSheet({
+      title: '匯入設定',
+      message: `已選擇 ${assets.length} 個檔案，匯入後要刪除相簿中的原始檔案嗎？`,
+      actions: [
+        { label: '保留原始檔案', onPress: () => doImport(assets, false, folderId) },
+        { label: '刪除原始檔案', style: 'destructive', onPress: () => doImport(assets, true, folderId) },
+      ],
+    });
   };
 
   const doImport = async (
@@ -155,10 +159,14 @@ export default function ImportScreen() {
         ? '\n原始檔案已刪除'
         : '\n⚠️ 原始檔案刪除失敗（請在系統對話框中點「允許」）';
     }
-    Alert.alert('匯入完成', msg, [
-      { text: '查看相簿', onPress: () => router.push('/(main)/gallery') },
-      { text: '繼續匯入', style: 'cancel' },
-    ]);
+    showSheet({
+      title: '匯入完成',
+      message: msg,
+      actions: [
+        { label: '查看相簿', onPress: () => router.push('/(main)/gallery') },
+        { label: '繼續匯入', onPress: () => {} },
+      ],
+    });
   };
 
   return (
@@ -225,6 +233,12 @@ export default function ImportScreen() {
           </View>
         </View>
       </Modal>
+
+      <BottomActionSheet
+        visible={sheetVisible}
+        config={sheetConfig}
+        onClose={() => setSheetVisible(false)}
+      />
     </View>
   );
 }

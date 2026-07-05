@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { BottomActionSheet, SheetConfig } from '../../src/components/BottomActionSheet';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -174,7 +175,7 @@ function MoveModal({ visible, folders, onSelect, onClose }: {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.moveModalBg}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} />
+        <TouchableOpacity style={{ flex: 1 }} onPress={onClose} />
         <View style={styles.moveModalSheet}>
           <Text style={styles.moveModalTitle}>移動到</Text>
           <ScrollView bounces={false}>
@@ -210,7 +211,7 @@ function FolderActionSheet({ visible, folderName, onRename, onDelete, onClose }:
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.folderActionBg}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
         <View style={styles.folderActionSheet}>
           <View style={styles.folderActionHandle} />
           <View style={styles.folderActionHeader}>
@@ -262,6 +263,9 @@ export default function GalleryScreen() {
   const [folderActionVisible, setFolderActionVisible] = useState(false);
   const [actionFolderId, setActionFolderId] = useState('');
   const [actionFolderName, setActionFolderName] = useState('');
+  const [sheetConfig, setSheetConfig] = useState<SheetConfig | null>(null);
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const showSheet = (config: SheetConfig) => { setSheetConfig(config); setSheetVisible(true); };
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [moveModal, setMoveModal] = useState(false);
   const [isEditingFolders, setIsEditingFolders] = useState(false);
@@ -326,11 +330,14 @@ export default function GalleryScreen() {
   const closeViewer = () => { setViewingId(null); setViewingUri(null); };
 
   const handleRestore = (id: string) => {
-    Alert.alert('還原到相簿', '還原後是否要從私密相簿中刪除？', [
-      { text: '還原並保留', onPress: () => doRestore(id, false) },
-      { text: '還原並刪除', style: 'destructive', onPress: () => doRestore(id, true) },
-      { text: '取消', style: 'cancel' },
-    ]);
+    showSheet({
+      title: '還原到相簿',
+      message: '還原後是否要從私密相簿中刪除？',
+      actions: [
+        { label: '還原並保留', onPress: () => doRestore(id, false) },
+        { label: '還原並刪除', style: 'destructive', onPress: () => doRestore(id, true) },
+      ],
+    });
   };
 
   const doRestore = async (id: string, removeFromVault: boolean) => {
@@ -338,7 +345,6 @@ export default function GalleryScreen() {
       const uri = await getTempDecryptedPath(id);
       await MediaLibrary.saveToLibraryAsync(uri);
       if (removeFromVault) { closeViewer(); await removeMedia(id); }
-      Alert.alert('完成', '已還原到相簿');
     } catch { Alert.alert('失敗', '還原時發生錯誤'); }
   };
 
@@ -350,33 +356,39 @@ export default function GalleryScreen() {
   };
 
   const confirmDelete = (id: string) => {
-    Alert.alert('刪除', '確定要永久刪除這個檔案嗎？', [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '刪除', style: 'destructive',
-        onPress: async () => {
-          setThumbs(prev => { const n = { ...prev }; delete n[id]; return n; });
-          if (viewingId === id) closeViewer();
-          await removeMedia(id);
+    showSheet({
+      title: '刪除檔案',
+      message: '確定要永久刪除這個檔案嗎？',
+      actions: [
+        {
+          label: '永久刪除', style: 'destructive',
+          onPress: async () => {
+            setThumbs(prev => { const n = { ...prev }; delete n[id]; return n; });
+            if (viewingId === id) closeViewer();
+            await removeMedia(id);
+          },
         },
-      },
-    ]);
+      ],
+    });
   };
 
   const handleBatchDelete = () => {
     const count = selectedIds.size;
-    Alert.alert('刪除', `確定要永久刪除這 ${count} 個檔案嗎？`, [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '刪除', style: 'destructive',
-        onPress: async () => {
-          const ids = [...selectedIds];
-          exitSelect();
-          setThumbs(prev => { const n = { ...prev }; ids.forEach(id => delete n[id]); return n; });
-          for (const id of ids) await removeMedia(id);
+    showSheet({
+      title: '刪除檔案',
+      message: `確定要永久刪除這 ${count} 個檔案嗎？`,
+      actions: [
+        {
+          label: `永久刪除 ${count} 個`, style: 'destructive',
+          onPress: async () => {
+            const ids = [...selectedIds];
+            exitSelect();
+            setThumbs(prev => { const n = { ...prev }; ids.forEach(id => delete n[id]); return n; });
+            for (const id of ids) await removeMedia(id);
+          },
         },
-      },
-    ]);
+      ],
+    });
   };
 
   const handleBatchMove = async (targetFolderId: string | null) => {
@@ -388,17 +400,19 @@ export default function GalleryScreen() {
 
   const handleBatchRestore = () => {
     const count = selectedIds.size;
-    Alert.alert('還原到相簿', `還原 ${count} 個檔案後，是否從私密相簿中刪除？`, [
-      { text: '還原並保留', onPress: () => doBatchRestore(false) },
-      { text: '還原並刪除', style: 'destructive', onPress: () => doBatchRestore(true) },
-      { text: '取消', style: 'cancel' },
-    ]);
+    showSheet({
+      title: '還原到相簿',
+      message: `還原 ${count} 個檔案後，是否從私密相簿中刪除？`,
+      actions: [
+        { label: '還原並保留', onPress: () => doBatchRestore(false) },
+        { label: '還原並刪除', style: 'destructive', onPress: () => doBatchRestore(true) },
+      ],
+    });
   };
 
   const doBatchRestore = async (removeFromVault: boolean) => {
     const ids = [...selectedIds];
     exitSelect();
-    let success = 0;
     for (const id of ids) {
       try {
         const uri = await getTempDecryptedPath(id);
@@ -407,10 +421,8 @@ export default function GalleryScreen() {
           setThumbs(prev => { const n = { ...prev }; delete n[id]; return n; });
           await removeMedia(id);
         }
-        success++;
       } catch { /* skip failed items */ }
     }
-    Alert.alert('完成', `已還原 ${success} 個檔案到相簿`);
   };
 
   // ── Folder actions ──
@@ -484,14 +496,11 @@ export default function GalleryScreen() {
     };
 
     const confirmDeleteFolder = () => {
-      Alert.alert(
-        '刪除資料夾',
-        `刪除「${name}」後，其中的檔案將移至全部`,
-        [
-          { text: '取消', style: 'cancel' },
-          { text: '刪除', style: 'destructive', onPress: () => deleteFolder(item.id!) },
-        ]
-      );
+      showSheet({
+        title: '刪除資料夾',
+        message: `刪除「${name}」後，其中的檔案將移至全部`,
+        actions: [{ label: '刪除資料夾', style: 'destructive', onPress: () => deleteFolder(item.id!) }],
+      });
     };
 
     return (
@@ -667,6 +676,13 @@ export default function GalleryScreen() {
         onCancel={() => setRenameModal(false)}
       />
 
+      {/* General confirm sheet */}
+      <BottomActionSheet
+        visible={sheetVisible}
+        config={sheetConfig}
+        onClose={() => setSheetVisible(false)}
+      />
+
       {/* Folder action sheet */}
       <FolderActionSheet
         visible={folderActionVisible}
@@ -679,14 +695,11 @@ export default function GalleryScreen() {
         }}
         onDelete={() => {
           setFolderActionVisible(false);
-          Alert.alert(
-            '刪除資料夾',
-            `刪除「${actionFolderName}」後，其中的檔案將移至全部`,
-            [
-              { text: '取消', style: 'cancel' },
-              { text: '刪除', style: 'destructive', onPress: () => deleteFolder(actionFolderId) },
-            ]
-          );
+          showSheet({
+            title: '刪除資料夾',
+            message: `刪除「${actionFolderName}」後，其中的檔案將移至全部`,
+            actions: [{ label: '刪除資料夾', style: 'destructive', onPress: () => deleteFolder(actionFolderId) }],
+          });
         }}
         onClose={() => setFolderActionVisible(false)}
       />
@@ -826,7 +839,7 @@ const styles = StyleSheet.create({
   selectBarBtnDeleteText: { color: '#ff453a' },
 
   // Move modal
-  moveModalBg: { flex: 1, justifyContent: 'flex-end' },
+  moveModalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
   moveModalSheet: {
     backgroundColor: '#140a0e',
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
@@ -878,7 +891,7 @@ const styles = StyleSheet.create({
   modalConfirmText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 
   // Folder action sheet
-  folderActionBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  folderActionBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
   folderActionSheet: {
     backgroundColor: '#140a0e',
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
