@@ -292,6 +292,9 @@ export default function GalleryScreen() {
     ? '全部'
     : folders.find(f => f.id === currentFolderId)?.name ?? '';
 
+  const allSelected = visibleEntries.length > 0 && visibleEntries.every(e => selectedIds.has(e.id));
+  const selectAll = () => setSelectedIds(new Set(visibleEntries.map(e => e.id)));
+
   useFocusEffect(useCallback(() => { loadIndex(); loadFolders(); }, []));
 
   useEffect(() => {
@@ -572,6 +575,9 @@ export default function GalleryScreen() {
             <FontAwesome5 name="times" size={20} color="#c01848" solid />
           </TouchableOpacity>
           <Text style={styles.selectCountTitle}>已選 {selectedIds.size} 個</Text>
+          <TouchableOpacity onPress={allSelected ? exitSelect : selectAll}>
+            <Text style={styles.selectAllBtnText}>{allSelected ? '取消全選' : '全選'}</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.header}>
@@ -831,7 +837,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#c01848', alignItems: 'center', justifyContent: 'center',
   },
   selectCancelBtn: { paddingRight: 12 },
-  selectCountTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  selectCountTitle: { color: '#fff', fontSize: 20, fontWeight: '700', flex: 1, textAlign: 'center' },
+  selectAllBtnText: { color: '#c01848', fontSize: 15, fontWeight: '600' },
   selectBar: {
     flexDirection: 'row',
     backgroundColor: '#140a0e',
