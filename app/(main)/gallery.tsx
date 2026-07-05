@@ -341,6 +341,33 @@ export default function GalleryScreen() {
     for (const id of ids) await moveToFolder(id, targetFolderId);
   };
 
+  const handleBatchRestore = () => {
+    const count = selectedIds.size;
+    Alert.alert('還原到相簿', `還原 ${count} 個檔案後，是否從私密相簿中刪除？`, [
+      { text: '還原並保留', onPress: () => doBatchRestore(false) },
+      { text: '還原並刪除', style: 'destructive', onPress: () => doBatchRestore(true) },
+      { text: '取消', style: 'cancel' },
+    ]);
+  };
+
+  const doBatchRestore = async (removeFromVault: boolean) => {
+    const ids = [...selectedIds];
+    exitSelect();
+    let success = 0;
+    for (const id of ids) {
+      try {
+        const uri = await getTempDecryptedPath(id);
+        await MediaLibrary.saveToLibraryAsync(uri);
+        if (removeFromVault) {
+          setThumbs(prev => { const n = { ...prev }; delete n[id]; return n; });
+          await removeMedia(id);
+        }
+        success++;
+      } catch { /* skip failed items */ }
+    }
+    Alert.alert('完成', `已還原 ${success} 個檔案到相簿`);
+  };
+
   // ── Folder actions ──
 
   const handleFolderLongPress = (id: string) => {
@@ -578,6 +605,9 @@ export default function GalleryScreen() {
           )}
           <TouchableOpacity style={styles.selectBarBtn} onPress={() => setMoveModal(true)}>
             <Text style={styles.selectBarBtnText}>移動</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.selectBarBtn} onPress={handleBatchRestore}>
+            <Text style={styles.selectBarBtnText}>還原</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.selectBarBtn, styles.selectBarBtnDelete]} onPress={handleBatchDelete}>
             <Text style={[styles.selectBarBtnText, styles.selectBarBtnDeleteText]}>刪除</Text>

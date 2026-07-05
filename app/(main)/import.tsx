@@ -24,31 +24,33 @@ function extractAssetId(uri: string, filename: string): string | null {
   return null;
 }
 
-async function deleteFromLibrary(
-  pickerUri: string,
-  filename: string,
-  mediaType: 'photo' | 'video'
-): Promise<boolean> {
-  let assetId = extractAssetId(pickerUri, filename);
+async function batchDeleteFromLibrary(
+  items: { uri: string; filename: string; isVideo: boolean }[]
+): Promise<number> {
+  const ids: string[] = [];
+  const needLookup = { photo: new Set<string>(), video: new Set<string>() };
 
-  if (!assetId) {
+  for (const item of items) {
+    const id = extractAssetId(item.uri, item.filename);
+    if (id) ids.push(id);
+    else needLookup[item.isVideo ? 'video' : 'photo'].add(item.filename);
+  }
+
+  for (const mediaType of ['photo', 'video'] as const) {
+    if (needLookup[mediaType].size === 0) continue;
     const { assets } = await MediaLibrary.getAssetsAsync({
       first: 500,
       sortBy: [[MediaLibrary.SortBy.creationTime, false]],
-      mediaType: mediaType === 'video'
-        ? MediaLibrary.MediaType.video
-        : MediaLibrary.MediaType.photo,
+      mediaType: mediaType === 'video' ? MediaLibrary.MediaType.video : MediaLibrary.MediaType.photo,
     });
-    const match = assets.find(a => a.filename === filename);
-    if (!match) {
-      Alert.alert('刪除失敗', '在相簿中找不到此檔案');
-      return false;
+    for (const a of assets) {
+      if (needLookup[mediaType].has(a.filename)) ids.push(a.id);
     }
-    assetId = match.id;
   }
 
-  const deleted = await MediaLibrary.deleteAssetsAsync([assetId]);
-  return deleted as unknown as boolean;
+  if (ids.length === 0) return 0;
+  const ok = await MediaLibrary.deleteAssetsAsync(ids);
+  return ok ? ids.length : 0;
 }
 
 export default function ImportScreen() {
@@ -119,7 +121,7 @@ export default function ImportScreen() {
     setLoading(true);
     setProgress({ done: 0, total: assets.length });
     let failed = 0;
-    let deleteCount = 0;
+    const toDelete: { uri: string; filename: string; isVideo: boolean }[] = [];
 
     for (let i = 0; i < assets.length; i++) {
       const asset = assets[i];
@@ -129,14 +131,7 @@ export default function ImportScreen() {
         const filename = asset.fileName ?? `file_${Date.now()}.${ext}`;
         const mimeType = asset.mimeType ?? (isVideo ? 'video/mp4' : 'image/jpeg');
         await addMedia(asset.uri, filename, mimeType, false, folderId);
-        if (deleteOriginal) {
-          try {
-            const ok = await deleteFromLibrary(asset.uri, filename, isVideo ? 'video' : 'photo');
-            if (ok) deleteCount++;
-          } catch {
-            // deletion failed — reported in completion alert
-          }
-        }
+        if (deleteOriginal) toDelete.push({ uri: asset.uri, filename, isVideo });
         setProgress({ done: i + 1, total: assets.length });
       } catch (e) {
         console.error('Import failed', asset.uri, e);
@@ -144,12 +139,18 @@ export default function ImportScreen() {
       }
     }
 
+    // Single system dialog for all deletions
+    let deleteCount = 0;
+    if (toDelete.length > 0) {
+      try { deleteCount = await batchDeleteFromLibrary(toDelete); } catch { /* ignore */ }
+    }
+
     setLoading(false);
     setSuppressLock(false);
     const success = assets.length - failed;
     let msg = failed > 0 ? `成功 ${success} 個，失敗 ${failed} 個` : `已儲存 ${success} 個檔案`;
     if (deleteOriginal) {
-      msg += deleteCount === success
+      msg += deleteCount === toDelete.length
         ? '\n原始檔案已刪除'
         : '\n⚠️ 原始檔案刪除失敗（請在系統對話框中點「允許」）';
     }
