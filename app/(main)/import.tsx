@@ -14,6 +14,7 @@ import * as MediaLibrary from 'expo-media-library/legacy';
 import { router } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import { useMediaStore } from '../../src/store/mediaStore';
+import { setSuppressLock } from '../../src/lockSuppressor';
 
 function extractAssetId(uri: string, filename: string): string | null {
   const uriMatch = uri.match(/\/media\/(\d+)(?:\/|$)/);
@@ -65,13 +66,16 @@ export default function ImportScreen() {
   );
 
   const pickAndImport = async () => {
+    setSuppressLock(true);
     const mlPerm = await MediaLibrary.requestPermissionsAsync(false);
     if (!mlPerm.granted) {
+      setSuppressLock(false);
       Alert.alert('需要權限', '請在系統設定中允許「完整」存取相簿（選「允許全部」）');
       return;
     }
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
+      setSuppressLock(false);
       Alert.alert('需要權限', '請在系統設定中允許存取相簿');
       return;
     }
@@ -82,7 +86,10 @@ export default function ImportScreen() {
       quality: 1,
     });
 
-    if (result.canceled || result.assets.length === 0) return;
+    if (result.canceled || result.assets.length === 0) {
+      setSuppressLock(false);
+      return;
+    }
 
     setPendingAssets(result.assets);
     setFolderModalVisible(true);
@@ -138,6 +145,7 @@ export default function ImportScreen() {
     }
 
     setLoading(false);
+    setSuppressLock(false);
     const success = assets.length - failed;
     let msg = failed > 0 ? `成功 ${success} 個，失敗 ${failed} 個` : `已儲存 ${success} 個檔案`;
     if (deleteOriginal) {

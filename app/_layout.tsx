@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-rout
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '../src/store/authStore';
 import { useMediaStore } from '../src/store/mediaStore';
+import { getSuppressLock } from '../src/lockSuppressor';
 
 const AUTO_LOCK_MS = 3_000;
 
@@ -25,7 +26,8 @@ function AuthGuard() {
         if (
           isAuthenticated &&
           backgroundedAt.current !== null &&
-          Date.now() - backgroundedAt.current >= AUTO_LOCK_MS
+          Date.now() - backgroundedAt.current >= AUTO_LOCK_MS &&
+          !getSuppressLock()
         ) {
           await cleanupTempFiles();
           logout();
