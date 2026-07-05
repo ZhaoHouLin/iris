@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -252,6 +252,7 @@ export default function GalleryScreen() {
   } = useMediaStore();
 
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const thumbsRef = useRef<Record<string, string>>({});
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [viewingUri, setViewingUri] = useState<string | null>(null);
   // null = root folder grid | ALL_ID = all items | folder.id = folder items
@@ -295,17 +296,28 @@ export default function GalleryScreen() {
 
   useEffect(() => {
     if (entries.length === 0) return;
+    const entryIds = new Set(entries.map(e => e.id));
+    const missing = entries.filter(e => !thumbsRef.current[e.id]);
+    const hasStale = Object.keys(thumbsRef.current).some(id => !entryIds.has(id));
+    if (missing.length === 0 && !hasStale) return;
+
     let cancelled = false;
     const load = async () => {
       const result: Record<string, string> = {};
-      for (const e of entries) {
+      for (const [id, path] of Object.entries(thumbsRef.current)) {
+        if (entryIds.has(id)) result[id] = path;
+      }
+      for (const e of missing) {
         if (cancelled) return;
         try {
           if (e.mimeType.startsWith('image/')) result[e.id] = await getTempDecryptedPath(e.id);
           else if (e.mimeType.startsWith('video/')) result[e.id] = await getVideoThumbPath(e.id);
         } catch { /* skip */ }
       }
-      if (!cancelled) setThumbs(result);
+      if (!cancelled) {
+        thumbsRef.current = result;
+        setThumbs(result);
+      }
     };
     load();
     return () => { cancelled = true; };

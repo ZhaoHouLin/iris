@@ -73,6 +73,7 @@ export const useMediaStore = create<MediaStore>((set, get) => ({
     if (!info.exists) { set({ entries: [] }); return; }
     try {
       const json = await FileSystem.readAsStringAsync(INDEX_FILE);
+      if (json === JSON.stringify(get().entries)) return;
       set({ entries: JSON.parse(json) as VaultEntry[] });
     } catch { set({ entries: [] }); }
   },
@@ -82,6 +83,7 @@ export const useMediaStore = create<MediaStore>((set, get) => ({
     if (!info.exists) { set({ folders: [] }); return; }
     try {
       const json = await FileSystem.readAsStringAsync(FOLDERS_FILE);
+      if (json === JSON.stringify(get().folders)) return;
       set({ folders: JSON.parse(json) as Folder[] });
     } catch { set({ folders: [] }); }
   },
