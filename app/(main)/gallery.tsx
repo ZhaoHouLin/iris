@@ -19,7 +19,7 @@ import { BottomActionSheet, SheetConfig } from '../../src/components/BottomActio
 import * as MediaLibrary from 'expo-media-library/legacy';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
 import { useMediaStore, Folder } from '../../src/store/mediaStore';
 
 const { width } = Dimensions.get('window');
@@ -35,7 +35,11 @@ const ALL_ID = '__all__';
 
 // ─── Zoomable image ───────────────────────────────────────────────────────────
 
-function ZoomableImage({ uri }: { uri: string }) {
+function ZoomableImage({ uri, onSwipeLeft, onSwipeRight }: {
+  uri: string;
+  onSwipeLeft?: () => void;
+  onSwipeRight?: () => void;
+}) {
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const transX = useSharedValue(0);
@@ -61,7 +65,15 @@ function ZoomableImage({ uri }: { uri: string }) {
         transY.value = savedTransY.value + e.translationY;
       }
     })
-    .onEnd(() => { savedTransX.value = transX.value; savedTransY.value = transY.value; });
+    .onEnd((e) => {
+      savedTransX.value = transX.value;
+      savedTransY.value = transY.value;
+      if (savedScale.value <= 1) {
+        const isHoriz = Math.abs(e.translationX) > Math.abs(e.translationY);
+        if (isHoriz && e.translationX < -60 && onSwipeLeft) runOnJS(onSwipeLeft)();
+        else if (isHoriz && e.translationX > 60 && onSwipeRight) runOnJS(onSwipeRight)();
+      }
+    });
 
   const doubleTap = Gesture.Tap().numberOfTaps(2).maxDelay(250)
     .onEnd(() => {
@@ -105,19 +117,33 @@ function ViewerActions({ onDelete, onRestore }: { onDelete: () => void; onRestor
 
 // ─── Video viewer ─────────────────────────────────────────────────────────────
 
-function VideoViewer({ uri, onClose, onDelete, onRestore }: {
+function VideoViewer({ uri, onClose, onDelete, onRestore, onSwipeLeft, onSwipeRight }: {
   uri: string; onClose: () => void; onDelete: () => void; onRestore: () => void;
+  onSwipeLeft?: () => void; onSwipeRight?: () => void;
 }) {
   const player = useVideoPlayer(uri, (p) => { p.loop = false; p.play(); });
+  const swipe = Gesture.Pan()
+    .activeOffsetX([-50, 50])
+    .failOffsetY([-30, 30])
+    .onEnd((e) => {
+      if (Math.abs(e.translationX) > 60) {
+        if (e.translationX < 0 && onSwipeLeft) runOnJS(onSwipeLeft)();
+        else if (e.translationX > 0 && onSwipeRight) runOnJS(onSwipeRight)();
+      }
+    });
   return (
-    <View style={styles.viewer}>
-      <StatusBar hidden />
-      <VideoView player={player} style={styles.viewerImage} contentFit="contain" />
-      <TouchableOpacity style={styles.viewerClose} onPress={onClose}>
-        <FontAwesome5 name="times" size={18} color="#fff" solid />
-      </TouchableOpacity>
-      <ViewerActions onDelete={onDelete} onRestore={onRestore} />
-    </View>
+    <GestureHandlerRootView style={styles.viewer}>
+      <GestureDetector gesture={swipe}>
+        <View style={styles.viewer}>
+          <StatusBar hidden />
+          <VideoView player={player} style={styles.viewerImage} contentFit="contain" />
+          <TouchableOpacity style={styles.viewerClose} onPress={onClose}>
+            <FontAwesome5 name="times" size={18} color="#fff" solid />
+          </TouchableOpacity>
+          <ViewerActions onDelete={onDelete} onRestore={onRestore} />
+        </View>
+      </GestureDetector>
+    </GestureHandlerRootView>
   );
 }
 
@@ -294,6 +320,10 @@ export default function GalleryScreen() {
 
   const allSelected = visibleEntries.length > 0 && visibleEntries.every(e => selectedIds.has(e.id));
   const selectAll = () => setSelectedIds(new Set(visibleEntries.map(e => e.id)));
+
+  const viewingIndex = viewingId ? visibleEntries.findIndex(e => e.id === viewingId) : -1;
+  const navigatePrev = () => { if (viewingIndex > 0) openViewer(visibleEntries[viewingIndex - 1].id); };
+  const navigateNext = () => { if (viewingIndex < visibleEntries.length - 1) openViewer(visibleEntries[viewingIndex + 1].id); };
 
   useFocusEffect(useCallback(() => { loadIndex(); loadFolders(); }, []));
 
@@ -626,11 +656,18 @@ export default function GalleryScreen() {
               onClose={closeViewer}
               onDelete={() => viewingId && confirmDelete(viewingId)}
               onRestore={() => viewingId && handleRestore(viewingId)}
+              onSwipeLeft={navigateNext}
+              onSwipeRight={navigatePrev}
             />
           ) : (
             <GestureHandlerRootView style={styles.viewer}>
               <StatusBar hidden />
-              <ZoomableImage key={viewingUri} uri={viewingUri} />
+              <ZoomableImage
+                key={viewingUri}
+                uri={viewingUri}
+                onSwipeLeft={navigateNext}
+                onSwipeRight={navigatePrev}
+              />
               <TouchableOpacity style={styles.viewerClose} onPress={closeViewer}>
                 <FontAwesome5 name="times" size={18} color="#fff" solid />
               </TouchableOpacity>
