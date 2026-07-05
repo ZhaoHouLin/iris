@@ -331,18 +331,35 @@ export default function GalleryScreen() {
     const hasStale = Object.keys(thumbsRef.current).some(id => !entryIds.has(id));
     if (missing.length === 0 && !hasStale) return;
 
+    // Load whatever is currently on screen first so opening a folder doesn't
+    // have to wait behind the rest of a large vault.
+    const visibleIds = new Set(visibleEntries.map(e => e.id));
+    const ordered = [
+      ...missing.filter(e => visibleIds.has(e.id)),
+      ...missing.filter(e => !visibleIds.has(e.id)),
+    ];
+
     let cancelled = false;
     const load = async () => {
       const result: Record<string, string> = {};
       for (const [id, path] of Object.entries(thumbsRef.current)) {
         if (entryIds.has(id)) result[id] = path;
       }
-      for (const e of missing) {
+      let sinceFlush = 0;
+      for (const e of ordered) {
         if (cancelled) return;
         try {
           if (e.mimeType.startsWith('image/')) result[e.id] = await getTempDecryptedPath(e.id);
           else if (e.mimeType.startsWith('video/')) result[e.id] = await getVideoThumbPath(e.id);
-        } catch { /* skip */ }
+          sinceFlush++;
+        } catch (err) { console.warn('Thumbnail load failed for', e.id, err); }
+        // Flush progressively instead of one commit at the end, so thumbnails
+        // appear as they're ready rather than all-or-nothing on a large vault.
+        if (sinceFlush >= 6) {
+          sinceFlush = 0;
+          thumbsRef.current = { ...result };
+          setThumbs(thumbsRef.current);
+        }
       }
       if (!cancelled) {
         thumbsRef.current = result;
@@ -351,7 +368,7 @@ export default function GalleryScreen() {
     };
     load();
     return () => { cancelled = true; };
-  }, [entries]);
+  }, [entries, visibleEntries]);
 
   // If current folder deleted while inside it, go back to root
   useEffect(() => {
