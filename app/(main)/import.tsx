@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { FontAwesome5 } from '@expo/vector-icons';
 import {
   View,
   Text,
@@ -177,7 +178,7 @@ export default function ImportScreen() {
       ) : (
         <View style={styles.body}>
           <TouchableOpacity style={styles.importBtn} onPress={pickAndImport} activeOpacity={0.7}>
-            <Text style={styles.importIcon}>＋</Text>
+            <FontAwesome5 name="file-import" size={48} color="#c01848" solid />
             <Text style={styles.importTitle}>選擇照片或影片</Text>
             <Text style={styles.importDesc}>從相簿選擇，支援多選</Text>
           </TouchableOpacity>
@@ -201,7 +202,7 @@ export default function ImportScreen() {
             <Text style={styles.modalTitle}>選擇資料夾</Text>
             <ScrollView style={styles.folderList} showsVerticalScrollIndicator={false}>
               <TouchableOpacity style={styles.folderItem} onPress={() => selectFolder(null)}>
-                <Text style={styles.folderItemIcon}>📁</Text>
+                <FontAwesome5 name="layer-group" size={28} color="#c01848" solid />
                 <Text style={styles.folderItemText}>不分類（全部）</Text>
               </TouchableOpacity>
               {folders.map(folder => (
@@ -210,7 +211,7 @@ export default function ImportScreen() {
                   style={styles.folderItem}
                   onPress={() => selectFolder(folder.id)}
                 >
-                  <Text style={styles.folderItemIcon}>📂</Text>
+                  <FontAwesome5 name="folder" size={28} color="#c01848" solid />
                   <Text style={styles.folderItemText}>{folder.name}</Text>
                 </TouchableOpacity>
               ))}
@@ -240,7 +241,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  importIcon: { fontSize: 48, color: '#c01848' },
   importTitle: { color: '#ffffff', fontSize: 20, fontWeight: '600' },
   importDesc: { color: '#9a6b7a', fontSize: 14 },
   note: {
@@ -275,7 +275,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#28101c',
     gap: 12,
   },
-  folderItemIcon: { fontSize: 22 },
   folderItemText: { color: '#fff', fontSize: 16 },
   modalCancel: {
     paddingVertical: 14,

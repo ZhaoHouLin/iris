@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/store/authStore';
 import { useBiometrics } from '../../src/hooks/useBiometrics';
 
@@ -124,7 +125,7 @@ export default function UnlockScreen() {
           <ActivityIndicator size="large" color="#c01848" style={{ marginTop: 48 }} />
         ) : (
           <TouchableOpacity style={styles.biometricBtn} onPress={triggerBiometric}>
-            <Text style={styles.biometricIcon}>🔐</Text>
+            <FontAwesome5 name="fingerprint" size={64} color="#c01848" solid />
             <Text style={styles.biometricText}>點此再次觸發辨識</Text>
           </TouchableOpacity>
         )}
@@ -238,7 +239,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  biometricIcon: { fontSize: 64 },
   biometricText: { color: '#9a6b7a', fontSize: 15 },
   switchBtn: { marginTop: 32 },
   switchText: { color: '#c01848', fontSize: 15 },

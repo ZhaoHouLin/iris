@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function MainLayout() {
@@ -23,21 +23,21 @@ export default function MainLayout() {
         name="gallery"
         options={{
           title: '相簿',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🔒</Text>,
+          tabBarIcon: ({ color }) => <FontAwesome5 name="images" size={20} color={color} solid />,
         }}
       />
       <Tabs.Screen
         name="import"
         options={{
           title: '匯入',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>＋</Text>,
+          tabBarIcon: ({ color }) => <FontAwesome5 name="download" size={20} color={color} solid />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: '設定',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>⚙</Text>,
+          tabBarIcon: ({ color }) => <FontAwesome5 name="cog" size={20} color={color} solid />,
         }}
       />
     </Tabs>

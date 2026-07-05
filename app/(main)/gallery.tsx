@@ -14,6 +14,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { FontAwesome5 } from '@expo/vector-icons';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -89,14 +90,13 @@ function ZoomableImage({ uri }: { uri: string }) {
 function ViewerActions({ onDelete, onRestore }: { onDelete: () => void; onRestore: () => void }) {
   return (
     <View style={styles.viewerActions}>
-      <TouchableOpacity style={styles.viewerActionBtn} onPress={onDelete}>
-        <Text style={styles.viewerActionIcon}>🗑</Text>
-        <Text style={styles.viewerActionLabel}>刪除</Text>
+      <TouchableOpacity style={styles.viewerActionDelete} onPress={onDelete}>
+        <FontAwesome5 name="trash-alt" size={18} color="#ff453a" solid />
+        <Text style={styles.viewerActionDeleteText}>刪除</Text>
       </TouchableOpacity>
-      <View style={styles.viewerActionDivider} />
-      <TouchableOpacity style={styles.viewerActionBtn} onPress={onRestore}>
-        <Text style={styles.viewerActionIcon}>↗</Text>
-        <Text style={[styles.viewerActionLabel, styles.viewerActionLabelRestore]}>還原到相簿</Text>
+      <TouchableOpacity style={styles.viewerActionRestore} onPress={onRestore}>
+        <FontAwesome5 name="upload" size={18} color="#fff" solid />
+        <Text style={styles.viewerActionRestoreText}>還原到相簿</Text>
       </TouchableOpacity>
     </View>
   );
@@ -113,7 +113,7 @@ function VideoViewer({ uri, onClose, onDelete, onRestore }: {
       <StatusBar hidden />
       <VideoView player={player} style={styles.viewerImage} contentFit="contain" />
       <TouchableOpacity style={styles.viewerClose} onPress={onClose}>
-        <Text style={styles.viewerCloseText}>✕</Text>
+        <FontAwesome5 name="times" size={18} color="#fff" solid />
       </TouchableOpacity>
       <ViewerActions onDelete={onDelete} onRestore={onRestore} />
     </View>
@@ -179,18 +179,60 @@ function MoveModal({ visible, folders, onSelect, onClose }: {
           <Text style={styles.moveModalTitle}>移動到</Text>
           <ScrollView bounces={false}>
             <TouchableOpacity style={styles.moveModalOption} onPress={() => onSelect(null)}>
-              <Text style={styles.moveModalOptionIcon}>🗂</Text>
+              <FontAwesome5 name="layer-group" size={28} color="#c01848" solid />
               <Text style={styles.moveModalOptionText}>不分類（全部）</Text>
             </TouchableOpacity>
             {folders.map(f => (
               <TouchableOpacity key={f.id} style={styles.moveModalOption} onPress={() => onSelect(f.id)}>
-                <Text style={styles.moveModalOptionIcon}>📁</Text>
+                <FontAwesome5 name="folder" size={28} color="#c01848" solid />
                 <Text style={styles.moveModalOptionText}>{f.name}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
           <TouchableOpacity style={styles.moveModalCancelBtn} onPress={onClose}>
             <Text style={styles.moveModalCancelText}>取消</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ─── Folder action sheet ──────────────────────────────────────────────────────
+
+function FolderActionSheet({ visible, folderName, onRename, onDelete, onClose }: {
+  visible: boolean;
+  folderName: string;
+  onRename: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.folderActionBg}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+        <View style={styles.folderActionSheet}>
+          <View style={styles.folderActionHandle} />
+          <View style={styles.folderActionHeader}>
+            <FontAwesome5 name="folder" size={18} color="#c01848" solid />
+            <Text style={styles.folderActionName} numberOfLines={1}>{folderName}</Text>
+          </View>
+          <TouchableOpacity style={styles.folderActionRow} onPress={onRename}>
+            <View style={styles.folderActionIconWrap}>
+              <FontAwesome5 name="pencil-alt" size={15} color="#c01848" solid />
+            </View>
+            <Text style={styles.folderActionRowText}>重新命名</Text>
+            <FontAwesome5 name="chevron-right" size={13} color="#3a1828" solid />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.folderActionRow} onPress={onDelete}>
+            <View style={[styles.folderActionIconWrap, styles.folderActionIconWrapRed]}>
+              <FontAwesome5 name="trash-alt" size={15} color="#ff453a" solid />
+            </View>
+            <Text style={[styles.folderActionRowText, styles.folderActionRowTextRed]}>刪除資料夾</Text>
+            <FontAwesome5 name="chevron-right" size={13} color="#3a1828" solid />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.folderActionCancelBtn} onPress={onClose}>
+            <Text style={styles.folderActionCancelText}>取消</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -217,6 +259,9 @@ export default function GalleryScreen() {
   const [renameModal, setRenameModal] = useState(false);
   const [renamingFolderId, setRenamingFolderId] = useState<string>('');
   const [renamingName, setRenamingName] = useState('');
+  const [folderActionVisible, setFolderActionVisible] = useState(false);
+  const [actionFolderId, setActionFolderId] = useState('');
+  const [actionFolderName, setActionFolderName] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [moveModal, setMoveModal] = useState(false);
   const [isEditingFolders, setIsEditingFolders] = useState(false);
@@ -373,28 +418,9 @@ export default function GalleryScreen() {
   const handleFolderLongPress = (id: string) => {
     const folder = folders.find(f => f.id === id);
     if (!folder) return;
-    Alert.alert(folder.name, '', [
-      {
-        text: '重新命名',
-        onPress: () => {
-          setRenamingFolderId(id);
-          setRenamingName(folder.name);
-          setRenameModal(true);
-        },
-      },
-      {
-        text: '刪除資料夾', style: 'destructive',
-        onPress: () => Alert.alert(
-          '刪除資料夾',
-          `刪除「${folder.name}」後，其中的檔案將移至全部`,
-          [
-            { text: '取消', style: 'cancel' },
-            { text: '刪除', style: 'destructive', onPress: () => deleteFolder(id) },
-          ]
-        ),
-      },
-      { text: '取消', style: 'cancel' },
-    ]);
+    setActionFolderId(id);
+    setActionFolderName(folder.name);
+    setFolderActionVisible(true);
   };
 
   // ── Render helpers ──
@@ -412,20 +438,20 @@ export default function GalleryScreen() {
           <View style={[styles.thumb, isSelected && styles.thumbSelected]}>
             <Image source={{ uri: thumbs[item.id] }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             {item.mimeType.startsWith('video/') && !isSelected && (
-              <View style={styles.playBadge}><Text style={styles.playBadgeIcon}>▶</Text></View>
+              <View style={styles.playBadge}><FontAwesome5 name="play" size={10} color="#fff" solid /></View>
             )}
             {isSelected && (
               <View style={styles.selectOverlay}>
-                <View style={styles.selectCheck}><Text style={styles.selectCheckMark}>✓</Text></View>
+                <View style={styles.selectCheck}><FontAwesome5 name="check" size={13} color="#fff" solid /></View>
               </View>
             )}
           </View>
         ) : (
           <View style={[styles.thumb, styles.placeholder, isSelected && styles.thumbSelected]}>
-            <Text style={styles.placeholderIcon}>{item.mimeType.startsWith('video/') ? '▶' : '📷'}</Text>
+            <FontAwesome5 name={item.mimeType.startsWith('video/') ? 'film' : 'image'} size={32} color="#3a1828" solid />
             {isSelected && (
               <View style={styles.selectOverlay}>
-                <View style={styles.selectCheck}><Text style={styles.selectCheckMark}>✓</Text></View>
+                <View style={styles.selectCheck}><FontAwesome5 name="check" size={13} color="#fff" solid /></View>
               </View>
             )}
           </View>
@@ -477,7 +503,7 @@ export default function GalleryScreen() {
       >
         {coverUri
           ? <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-          : <Text style={styles.folderCardIcon}>{isAll ? '🗂' : '📁'}</Text>
+          : <FontAwesome5 name={isAll ? 'layer-group' : 'folder'} size={80} color="#c01848" solid />
         }
         <View style={styles.folderCardOverlay} />
         <View style={styles.folderCardFooter}>
@@ -486,7 +512,7 @@ export default function GalleryScreen() {
         </View>
         {isEditingFolders && !isAll && (
           <TouchableOpacity style={styles.folderDeleteBadge} onPress={confirmDeleteFolder}>
-            <Text style={styles.folderDeleteBadgeText}>✕</Text>
+            <FontAwesome5 name="times" size={12} color="#fff" solid />
           </TouchableOpacity>
         )}
       </TouchableOpacity>
@@ -522,14 +548,14 @@ export default function GalleryScreen() {
       ) : isSelecting ? (
         <View style={styles.header}>
           <TouchableOpacity onPress={exitSelect} style={styles.selectCancelBtn}>
-            <Text style={styles.selectCancelText}>✕</Text>
+            <FontAwesome5 name="times" size={20} color="#c01848" solid />
           </TouchableOpacity>
           <Text style={styles.selectCountTitle}>已選 {selectedIds.size} 個</Text>
         </View>
       ) : (
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => setCurrentFolderId(null)}>
-            <Text style={styles.backArrow}>‹</Text>
+            <FontAwesome5 name="chevron-left" size={22} color="#c01848" solid />
             <Text style={styles.backTitle} numberOfLines={1}>{currentFolderName}</Text>
           </TouchableOpacity>
         </View>
@@ -579,7 +605,7 @@ export default function GalleryScreen() {
               <StatusBar hidden />
               <ZoomableImage key={viewingUri} uri={viewingUri} />
               <TouchableOpacity style={styles.viewerClose} onPress={closeViewer}>
-                <Text style={styles.viewerCloseText}>✕</Text>
+                <FontAwesome5 name="times" size={18} color="#fff" solid />
               </TouchableOpacity>
               {viewingId && (
                 <ViewerActions
@@ -640,6 +666,30 @@ export default function GalleryScreen() {
         onConfirm={async (name) => { await renameFolder(renamingFolderId, name); setRenameModal(false); }}
         onCancel={() => setRenameModal(false)}
       />
+
+      {/* Folder action sheet */}
+      <FolderActionSheet
+        visible={folderActionVisible}
+        folderName={actionFolderName}
+        onRename={() => {
+          setFolderActionVisible(false);
+          setRenamingFolderId(actionFolderId);
+          setRenamingName(actionFolderName);
+          setRenameModal(true);
+        }}
+        onDelete={() => {
+          setFolderActionVisible(false);
+          Alert.alert(
+            '刪除資料夾',
+            `刪除「${actionFolderName}」後，其中的檔案將移至全部`,
+            [
+              { text: '取消', style: 'cancel' },
+              { text: '刪除', style: 'destructive', onPress: () => deleteFolder(actionFolderId) },
+            ]
+          );
+        }}
+        onClose={() => setFolderActionVisible(false)}
+      />
     </View>
   );
 }
@@ -666,7 +716,6 @@ const styles = StyleSheet.create({
   },
   addFolderBtnText: { color: '#c01848', fontSize: 14, fontWeight: '600' },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  backArrow: { color: '#c01848', fontSize: 36, lineHeight: 40 },
   backTitle: { color: '#ffffff', fontSize: 24, fontWeight: '700', flexShrink: 1 },
 
   // Folder grid
@@ -681,7 +730,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  folderCardIcon: { fontSize: 44 },
   folderDeleteBadge: {
     position: 'absolute', top: 6, left: 6,
     width: 26, height: 26, borderRadius: 13,
@@ -689,7 +737,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4, elevation: 4,
   },
-  folderDeleteBadgeText: { color: '#fff', fontSize: 13, fontWeight: '700', lineHeight: 16 },
   folderCardOverlay: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
@@ -709,13 +756,11 @@ const styles = StyleSheet.create({
   item: { margin: GAP / 2 },
   thumb: { width: ITEM_SIZE, height: ITEM_SIZE, borderRadius: 4, overflow: 'hidden' },
   placeholder: { backgroundColor: '#140a0e', alignItems: 'center', justifyContent: 'center' },
-  placeholderIcon: { fontSize: 32 },
   playBadge: {
     position: 'absolute', bottom: 4, left: 4,
     backgroundColor: 'rgba(0,0,0,0.55)',
     borderRadius: 10, paddingHorizontal: 5, paddingVertical: 2,
   },
-  playBadgeIcon: { color: '#fff', fontSize: 10 },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   empty: { color: '#9a6b7a', fontSize: 18 },
@@ -730,25 +775,23 @@ const styles = StyleSheet.create({
     borderRadius: 20, width: 40, height: 40,
     alignItems: 'center', justifyContent: 'center',
   },
-  viewerCloseText: { color: '#fff', fontSize: 18 },
   viewerActions: {
-    position: 'absolute', bottom: 48, alignSelf: 'center',
-    flexDirection: 'row',
-    backgroundColor: 'rgba(20,20,35,0.85)',
-    borderRadius: 32, overflow: 'hidden',
+    position: 'absolute', bottom: 90, left: 20, right: 20,
+    flexDirection: 'row', gap: 10,
   },
-  viewerActionBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 24, paddingVertical: 14,
+  viewerActionDelete: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 14, borderRadius: 16,
+    backgroundColor: 'rgba(20,8,14,0.92)',
+    borderWidth: 1, borderColor: 'rgba(255,69,58,0.35)',
   },
-  viewerActionDivider: {
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    marginVertical: 10,
+  viewerActionDeleteText: { color: '#ff453a', fontSize: 15, fontWeight: '600' },
+  viewerActionRestore: {
+    flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 14, borderRadius: 16,
+    backgroundColor: '#c01848',
   },
-  viewerActionIcon: { fontSize: 18 },
-  viewerActionLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 15 },
-  viewerActionLabelRestore: { color: '#a89cf7', fontWeight: '600' },
+  viewerActionRestoreText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 
   // Selection
   thumbSelected: { opacity: 0.75 },
@@ -762,9 +805,7 @@ const styles = StyleSheet.create({
     width: 22, height: 22, borderRadius: 11,
     backgroundColor: '#c01848', alignItems: 'center', justifyContent: 'center',
   },
-  selectCheckMark: { color: '#fff', fontSize: 13, fontWeight: '700' },
   selectCancelBtn: { paddingRight: 12 },
-  selectCancelText: { color: '#c01848', fontSize: 20 },
   selectCountTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
   selectBar: {
     flexDirection: 'row',
@@ -801,7 +842,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24, paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#28101c',
   },
-  moveModalOptionIcon: { fontSize: 22 },
   moveModalOptionText: { color: '#fff', fontSize: 16 },
   moveModalCancelBtn: {
     marginTop: 8, marginHorizontal: 16, borderRadius: 14,
@@ -836,4 +876,40 @@ const styles = StyleSheet.create({
     backgroundColor: '#c01848', alignItems: 'center',
   },
   modalConfirmText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+
+  // Folder action sheet
+  folderActionBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  folderActionSheet: {
+    backgroundColor: '#140a0e',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingBottom: 40, paddingTop: 12,
+  },
+  folderActionHandle: {
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: '#3a1828', alignSelf: 'center', marginBottom: 16,
+  },
+  folderActionHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 24, paddingBottom: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#28101c',
+  },
+  folderActionName: { color: '#fff', fontSize: 16, fontWeight: '600', flex: 1 },
+  folderActionRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingHorizontal: 24, paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#28101c',
+  },
+  folderActionIconWrap: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: 'rgba(192,24,72,0.12)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  folderActionIconWrapRed: { backgroundColor: 'rgba(255,69,58,0.12)' },
+  folderActionRowText: { color: '#fff', fontSize: 16, flex: 1 },
+  folderActionRowTextRed: { color: '#ff453a' },
+  folderActionCancelBtn: {
+    marginHorizontal: 16, marginTop: 12, borderRadius: 14,
+    backgroundColor: '#28101c', paddingVertical: 14, alignItems: 'center',
+  },
+  folderActionCancelText: { color: '#9a6b7a', fontSize: 16, fontWeight: '600' },
 });
