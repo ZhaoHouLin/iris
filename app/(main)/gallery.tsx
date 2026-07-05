@@ -12,8 +12,8 @@ import {
   Modal,
   TextInput,
   StatusBar,
-  PanResponder,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { BottomActionSheet, SheetConfig } from '../../src/components/BottomActionSheet';
@@ -118,30 +118,30 @@ function ViewerActions({ onDelete, onRestore }: { onDelete: () => void; onRestor
 
 // ─── Video viewer ─────────────────────────────────────────────────────────────
 
-function VideoViewer({ uri, onClose, onDelete, onRestore, onSwipeLeft, onSwipeRight }: {
+function VideoViewer({ uri, onClose, onDelete, onRestore, onPrev, onNext }: {
   uri: string; onClose: () => void; onDelete: () => void; onRestore: () => void;
-  onSwipeLeft?: () => void; onSwipeRight?: () => void;
+  onPrev?: () => void; onNext?: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const player = useVideoPlayer(uri, (p) => { p.loop = false; p.play(); });
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gs) =>
-        Math.abs(gs.dx) > 20 && Math.abs(gs.dx) > Math.abs(gs.dy) * 2,
-      onPanResponderRelease: (_, gs) => {
-        if (gs.dx < -60 && onSwipeLeft) onSwipeLeft();
-        else if (gs.dx > 60 && onSwipeRight) onSwipeRight();
-      },
-    })
-  ).current;
   return (
-    <View style={styles.viewer} {...panResponder.panHandlers}>
+    <View style={[styles.viewer, { paddingBottom: insets.bottom }]}>
       <StatusBar hidden />
       <VideoView player={player} style={styles.viewerImage} contentFit="contain" />
       <TouchableOpacity style={styles.viewerClose} onPress={onClose}>
         <FontAwesome5 name="times" size={18} color="#fff" solid />
       </TouchableOpacity>
       <ViewerActions onDelete={onDelete} onRestore={onRestore} />
+      {onPrev && (
+        <TouchableOpacity style={styles.viewerNavLeft} onPress={onPrev} activeOpacity={0.6}>
+          <FontAwesome5 name="chevron-left" size={24} color="#fff" solid />
+        </TouchableOpacity>
+      )}
+      {onNext && (
+        <TouchableOpacity style={styles.viewerNavRight} onPress={onNext} activeOpacity={0.6}>
+          <FontAwesome5 name="chevron-right" size={24} color="#fff" solid />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -655,8 +655,8 @@ export default function GalleryScreen() {
               onClose={closeViewer}
               onDelete={() => viewingId && confirmDelete(viewingId)}
               onRestore={() => viewingId && handleRestore(viewingId)}
-              onSwipeLeft={navigateNext}
-              onSwipeRight={navigatePrev}
+              onPrev={viewingIndex > 0 ? navigatePrev : undefined}
+              onNext={viewingIndex < visibleEntries.length - 1 ? navigateNext : undefined}
             />
           ) : (
             <GestureHandlerRootView style={styles.viewer}>
@@ -859,6 +859,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#c01848',
   },
   viewerActionRestoreText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  viewerNavLeft: {
+    position: 'absolute', left: 0, top: 80, bottom: 120,
+    width: 52, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
+  viewerNavRight: {
+    position: 'absolute', right: 0, top: 80, bottom: 120,
+    width: 52, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
 
   // Selection
   thumbSelected: { opacity: 0.75 },
