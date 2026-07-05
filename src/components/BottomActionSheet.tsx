@@ -1,4 +1,5 @@
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type SheetAction = {
   label: string;
@@ -17,12 +18,13 @@ export function BottomActionSheet({ visible, config, onClose }: {
   config: SheetConfig | null;
   onClose: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   if (!config) return null;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={s.bg}>
         <TouchableOpacity style={s.dismiss} activeOpacity={1} onPress={onClose} />
-        <View style={s.sheet}>
+        <View style={[s.sheet, { paddingBottom: 16 + insets.bottom }]}>
           <View style={s.handle} />
           <Text style={s.title}>{config.title}</Text>
           {config.message ? <Text style={s.message}>{config.message}</Text> : null}
@@ -54,7 +56,7 @@ const s = StyleSheet.create({
   sheet: {
     backgroundColor: '#140a0e',
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingBottom: 40, paddingTop: 12, paddingHorizontal: 16,
+    paddingTop: 12, paddingHorizontal: 16,
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,

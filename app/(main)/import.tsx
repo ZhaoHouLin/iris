@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomActionSheet, SheetConfig } from '../../src/components/BottomActionSheet';
 import {
   View,
@@ -56,6 +57,7 @@ async function batchDeleteFromLibrary(
 }
 
 export default function ImportScreen() {
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [pendingAssets, setPendingAssets] = useState<ImagePicker.ImagePickerAsset[] | null>(null);
@@ -206,7 +208,7 @@ export default function ImportScreen() {
         onRequestClose={() => { setFolderModalVisible(false); setPendingAssets(null); }}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
+          <View style={[styles.modalBox, { paddingBottom: 24 + insets.bottom }]}>
             <Text style={styles.modalTitle}>選擇資料夾</Text>
             <ScrollView style={styles.folderList} showsVerticalScrollIndicator={false}>
               <TouchableOpacity style={styles.folderItem} onPress={() => selectFolder(null)}>
