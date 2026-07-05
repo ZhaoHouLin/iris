@@ -12,6 +12,7 @@ import {
   Modal,
   TextInput,
   StatusBar,
+  PanResponder,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -122,28 +123,26 @@ function VideoViewer({ uri, onClose, onDelete, onRestore, onSwipeLeft, onSwipeRi
   onSwipeLeft?: () => void; onSwipeRight?: () => void;
 }) {
   const player = useVideoPlayer(uri, (p) => { p.loop = false; p.play(); });
-  const swipe = Gesture.Pan()
-    .activeOffsetX([-50, 50])
-    .failOffsetY([-30, 30])
-    .onEnd((e) => {
-      if (Math.abs(e.translationX) > 60) {
-        if (e.translationX < 0 && onSwipeLeft) runOnJS(onSwipeLeft)();
-        else if (e.translationX > 0 && onSwipeRight) runOnJS(onSwipeRight)();
-      }
-    });
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > 20 && Math.abs(gs.dx) > Math.abs(gs.dy) * 2,
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dx < -60 && onSwipeLeft) onSwipeLeft();
+        else if (gs.dx > 60 && onSwipeRight) onSwipeRight();
+      },
+    })
+  ).current;
   return (
-    <GestureHandlerRootView style={styles.viewer}>
-      <GestureDetector gesture={swipe}>
-        <View style={styles.viewer}>
-          <StatusBar hidden />
-          <VideoView player={player} style={styles.viewerImage} contentFit="contain" />
-          <TouchableOpacity style={styles.viewerClose} onPress={onClose}>
-            <FontAwesome5 name="times" size={18} color="#fff" solid />
-          </TouchableOpacity>
-          <ViewerActions onDelete={onDelete} onRestore={onRestore} />
-        </View>
-      </GestureDetector>
-    </GestureHandlerRootView>
+    <View style={styles.viewer} {...panResponder.panHandlers}>
+      <StatusBar hidden />
+      <VideoView player={player} style={styles.viewerImage} contentFit="contain" />
+      <TouchableOpacity style={styles.viewerClose} onPress={onClose}>
+        <FontAwesome5 name="times" size={18} color="#fff" solid />
+      </TouchableOpacity>
+      <ViewerActions onDelete={onDelete} onRestore={onRestore} />
+    </View>
   );
 }
 
