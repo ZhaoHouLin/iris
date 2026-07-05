@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Modal,
   ScrollView,
+  TextInput,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library/legacy';
@@ -62,11 +63,13 @@ export default function ImportScreen() {
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [pendingAssets, setPendingAssets] = useState<ImagePicker.ImagePickerAsset[] | null>(null);
   const [folderModalVisible, setFolderModalVisible] = useState(false);
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
   const [sheetConfig, setSheetConfig] = useState<SheetConfig | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
   const showSheet = (config: SheetConfig) => { setSheetConfig(config); setSheetVisible(true); };
 
-  const { addMedia, folders, loadFolders } = useMediaStore();
+  const { addMedia, folders, loadFolders, createFolder } = useMediaStore();
 
   useFocusEffect(
     useCallback(() => {
@@ -205,12 +208,42 @@ export default function ImportScreen() {
         visible={folderModalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => { setFolderModalVisible(false); setPendingAssets(null); }}
+        onRequestClose={() => { setFolderModalVisible(false); setPendingAssets(null); setCreatingFolder(false); setNewFolderName(''); }}
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalBox, { paddingBottom: 24 + insets.bottom }]}>
             <Text style={styles.modalTitle}>選擇資料夾</Text>
             <ScrollView style={styles.folderList} showsVerticalScrollIndicator={false}>
+              {creatingFolder ? (
+                <View style={styles.newFolderRow}>
+                  <TextInput
+                    style={styles.newFolderInput}
+                    value={newFolderName}
+                    onChangeText={setNewFolderName}
+                    placeholder="資料夾名稱"
+                    placeholderTextColor="#6b4a55"
+                    autoFocus
+                  />
+                  <TouchableOpacity onPress={async () => {
+                    const name = newFolderName.trim();
+                    if (!name) return;
+                    const folder = await createFolder(name);
+                    setCreatingFolder(false);
+                    setNewFolderName('');
+                    selectFolder(folder.id);
+                  }}>
+                    <Text style={styles.newFolderConfirm}>確認</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => { setCreatingFolder(false); setNewFolderName(''); }}>
+                    <Text style={styles.newFolderCancel}>取消</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity style={styles.folderItem} onPress={() => setCreatingFolder(true)}>
+                  <FontAwesome5 name="folder-plus" size={28} color="#c01848" solid />
+                  <Text style={styles.folderItemText}>新增資料夾</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity style={styles.folderItem} onPress={() => selectFolder(null)}>
                 <FontAwesome5 name="layer-group" size={28} color="#c01848" solid />
                 <Text style={styles.folderItemText}>不分類（全部）</Text>
@@ -228,7 +261,7 @@ export default function ImportScreen() {
             </ScrollView>
             <TouchableOpacity
               style={styles.modalCancel}
-              onPress={() => { setFolderModalVisible(false); setPendingAssets(null); }}
+              onPress={() => { setFolderModalVisible(false); setPendingAssets(null); setCreatingFolder(false); setNewFolderName(''); }}
             >
               <Text style={styles.modalCancelText}>取消</Text>
             </TouchableOpacity>
@@ -292,6 +325,25 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   folderItemText: { color: '#fff', fontSize: 16 },
+  newFolderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#28101c',
+    gap: 10,
+  },
+  newFolderInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 16,
+    backgroundColor: '#28101c',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  newFolderConfirm: { color: '#c01848', fontSize: 15, fontWeight: '600' },
+  newFolderCancel: { color: '#6b4a55', fontSize: 15 },
   modalCancel: {
     paddingVertical: 14,
     borderRadius: 12,
