@@ -13,7 +13,6 @@ import {
   TextInput,
   StatusBar,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { BottomActionSheet, SheetConfig } from '../../src/components/BottomActionSheet';
@@ -122,25 +121,15 @@ function VideoViewer({ uri, onClose, onDelete, onRestore, onPrev, onNext }: {
   uri: string; onClose: () => void; onDelete: () => void; onRestore: () => void;
   onPrev?: () => void; onNext?: () => void;
 }) {
-  const insets = useSafeAreaInsets();
   const player = useVideoPlayer(uri, (p) => { p.loop = false; p.play(); });
   return (
-    <View style={[styles.viewer, { paddingBottom: insets.bottom }]}>
+    <View style={styles.viewer}>
       <StatusBar hidden />
       <VideoView player={player} style={styles.viewerImage} contentFit="contain" />
       <TouchableOpacity style={styles.viewerClose} onPress={onClose}>
         <FontAwesome5 name="times" size={18} color="#fff" solid />
       </TouchableOpacity>
-      <View style={styles.videoViewerActions}>
-        <TouchableOpacity style={styles.viewerActionDelete} onPress={onDelete}>
-          <FontAwesome5 name="trash-alt" size={18} color="#ff453a" solid />
-          <Text style={styles.viewerActionDeleteText}>刪除</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.viewerActionRestore} onPress={onRestore}>
-          <FontAwesome5 name="upload" size={18} color="#fff" solid />
-          <Text style={styles.viewerActionRestoreText}>還原到相簿</Text>
-        </TouchableOpacity>
-      </View>
+      <ViewerActions onDelete={onDelete} onRestore={onRestore} />
       {onPrev && (
         <TouchableOpacity style={styles.viewerNavLeft} onPress={onPrev} activeOpacity={0.6}>
           <FontAwesome5 name="chevron-left" size={24} color="#fff" solid />
@@ -868,10 +857,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#c01848',
   },
   viewerActionRestoreText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  videoViewerActions: {
-    position: 'absolute', top: 108, left: 20, right: 20,
-    flexDirection: 'row', gap: 10,
-  },
   viewerNavLeft: {
     position: 'absolute', left: 0, top: 80, bottom: 120,
     width: 52, justifyContent: 'center', alignItems: 'center',
