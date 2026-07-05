@@ -100,7 +100,7 @@ src/
 
 ## 已知問題 / 待辦
 
-- [ ] **影片縮圖**：`expo-video-thumbnails` native module 需完整 rebuild（`npx expo run:android`）後才能啟用；目前未 rebuild 時顯示 ▶ placeholder
+- [x] **影片縮圖**：`expo-video-thumbnails` 已啟用（需 `npx expo run:android` rebuild 一次）
 - [ ] 影片目前不加密，依賴 Android App 私有目錄隔離
 - [ ] 大量照片時縮圖載入無進度提示
 

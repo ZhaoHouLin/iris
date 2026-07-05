@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { TurboModuleRegistry } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ExpoCrypto from 'expo-crypto';
 import { VAULT_DIR, encryptFile, decryptFile, ensureVaultDir } from '../crypto/encryption';
@@ -194,12 +193,9 @@ export const useMediaStore = create<MediaStore>((set, get) => ({
       await FileSystem.makeDirectoryAsync(THUMB_DIR, { intermediates: true });
     }
 
-    if (!TurboModuleRegistry.get('ExpoVideoThumbnails')) {
-      throw new Error('ExpoVideoThumbnails not linked — rebuild required');
-    }
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const VideoThumbnails = require('expo-video-thumbnails');
-    const { uri } = await VideoThumbnails.getThumbnailAsync(entry.encryptedPath, { time: 1000 });
+    const { getThumbnailAsync } = require('expo-video-thumbnails');
+    const { uri } = await getThumbnailAsync(entry.encryptedPath, { time: 1000 });
     await FileSystem.copyAsync({ from: uri, to: thumbPath });
     return thumbPath;
   },
