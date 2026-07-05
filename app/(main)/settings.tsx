@@ -45,7 +45,7 @@ export default function SettingsScreen() {
             <Switch
               value={biometricEnabled}
               onValueChange={(val) => setBiometricEnabled(val)}
-              trackColor={{ false: '#3a3a5c', true: '#7c6ff7' }}
+              trackColor={{ false: '#3a1828', true: '#c01848' }}
               thumbColor="#ffffff"
             />
           }
@@ -85,7 +85,7 @@ export default function SettingsScreen() {
               secureTextEntry
               maxLength={8}
               placeholder="輸入新 PIN 碼"
-              placeholderTextColor="#555570"
+              placeholderTextColor="#6b4a55"
             />
 
             <View style={styles.modalActions}>
@@ -149,7 +149,7 @@ function Row({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
+  container: { flex: 1, backgroundColor: '#080608' },
   header: {
     paddingHorizontal: 20,
     paddingTop: 60,
@@ -158,14 +158,14 @@ const styles = StyleSheet.create({
   title: { color: '#ffffff', fontSize: 28, fontWeight: '700' },
   section: { paddingHorizontal: 16, marginTop: 24 },
   sectionTitle: {
-    color: '#555570',
+    color: '#6b4a55',
     fontSize: 13,
     fontWeight: '600',
     textTransform: 'uppercase',
     marginBottom: 8,
     paddingLeft: 4,
   },
-  sectionBody: { backgroundColor: '#1e1e30', borderRadius: 16, overflow: 'hidden' },
+  sectionBody: { backgroundColor: '#140a0e', borderRadius: 16, overflow: 'hidden' },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -173,25 +173,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#2a2a40',
+    borderBottomColor: '#28101c',
   },
   rowLabel: { color: '#ffffff', fontSize: 16 },
   rowRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  rowValue: { color: '#7c7c9b', fontSize: 15 },
-  arrow: { color: '#3a3a5c', fontSize: 22 },
+  rowValue: { color: '#9a6b7a', fontSize: 15 },
+  arrow: { color: '#3a1828', fontSize: 22 },
   autoLockNote: {
     marginTop: 'auto',
     alignItems: 'center',
     paddingBottom: 8,
   },
-  autoLockNoteText: { color: '#3a3a5c', fontSize: 12 },
+  autoLockNoteText: { color: '#3a1828', fontSize: 12 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'flex-end',
   },
   modalCard: {
-    backgroundColor: '#1e1e30',
+    backgroundColor: '#140a0e',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -203,9 +203,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 24,
   },
-  inputLabel: { color: '#7c7c9b', fontSize: 13, marginBottom: 6 },
+  inputLabel: { color: '#9a6b7a', fontSize: 13, marginBottom: 6 },
   input: {
-    backgroundColor: '#0f0f1a',
+    backgroundColor: '#080608',
     borderRadius: 12,
     padding: 14,
     color: '#ffffff',
@@ -214,8 +214,8 @@ const styles = StyleSheet.create({
   },
   modalActions: { flexDirection: 'row', gap: 12 },
   modalBtn: { flex: 1, borderRadius: 14, padding: 16, alignItems: 'center' },
-  modalBtnCancel: { backgroundColor: '#0f0f1a' },
-  modalBtnSave: { backgroundColor: '#7c6ff7' },
-  modalBtnCancelText: { color: '#7c7c9b', fontSize: 16, fontWeight: '600' },
+  modalBtnCancel: { backgroundColor: '#080608' },
+  modalBtnSave: { backgroundColor: '#c01848' },
+  modalBtnCancelText: { color: '#9a6b7a', fontSize: 16, fontWeight: '600' },
   modalBtnSaveText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
 });

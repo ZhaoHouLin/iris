@@ -121,7 +121,7 @@ export default function UnlockScreen() {
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
         {loading ? (
-          <ActivityIndicator size="large" color="#7c6ff7" style={{ marginTop: 48 }} />
+          <ActivityIndicator size="large" color="#c01848" style={{ marginTop: 48 }} />
         ) : (
           <TouchableOpacity style={styles.biometricBtn} onPress={triggerBiometric}>
             <Text style={styles.biometricIcon}>🔐</Text>
@@ -147,7 +147,7 @@ export default function UnlockScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#7c6ff7" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color="#c01848" style={{ marginTop: 40 }} />
       ) : (
         <View style={styles.keypad}>
           {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((key, i) => (
@@ -178,7 +178,7 @@ export default function UnlockScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f1a',
+    backgroundColor: '#080608',
     alignItems: 'center',
     justifyContent: 'center',
     paddingBottom: 60,
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    color: '#7c7c9b',
+    color: '#9a6b7a',
     fontSize: 14,
     marginBottom: 8,
   },
@@ -204,11 +204,11 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#3a3a5c',
+    borderColor: '#3a1828',
   },
   dotFilled: {
-    backgroundColor: '#7c6ff7',
-    borderColor: '#7c6ff7',
+    backgroundColor: '#c01848',
+    borderColor: '#c01848',
   },
   keypad: {
     flexDirection: 'row',
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#1e1e30',
+    backgroundColor: '#140a0e',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   biometricIcon: { fontSize: 64 },
-  biometricText: { color: '#7c7c9b', fontSize: 15 },
+  biometricText: { color: '#9a6b7a', fontSize: 15 },
   switchBtn: { marginTop: 32 },
-  switchText: { color: '#7c6ff7', fontSize: 15 },
+  switchText: { color: '#c01848', fontSize: 15 },
 });

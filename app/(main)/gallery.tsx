@@ -617,7 +617,7 @@ export default function GalleryScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
+  container: { flex: 1, backgroundColor: '#080608' },
 
   header: {
     flexDirection: 'row',
@@ -629,14 +629,14 @@ const styles = StyleSheet.create({
   },
   title: { color: '#ffffff', fontSize: 28, fontWeight: '700' },
   addFolderBtn: {
-    backgroundColor: '#1e1e30',
+    backgroundColor: '#140a0e',
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 7,
   },
-  addFolderBtnText: { color: '#7c6ff7', fontSize: 14, fontWeight: '600' },
+  addFolderBtnText: { color: '#c01848', fontSize: 14, fontWeight: '600' },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  backArrow: { color: '#7c6ff7', fontSize: 36, lineHeight: 40 },
+  backArrow: { color: '#c01848', fontSize: 36, lineHeight: 40 },
   backTitle: { color: '#ffffff', fontSize: 24, fontWeight: '700', flexShrink: 1 },
 
   // Folder grid
@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
   folderCard: {
     width: FOLDER_CARD_SIZE,
     height: FOLDER_CARD_SIZE,
-    backgroundColor: '#1e1e30',
+    backgroundColor: '#140a0e',
     borderRadius: 16,
     overflow: 'hidden',
     alignItems: 'center',
@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
   grid: { padding: GAP },
   item: { margin: GAP / 2 },
   thumb: { width: ITEM_SIZE, height: ITEM_SIZE, borderRadius: 4, overflow: 'hidden' },
-  placeholder: { backgroundColor: '#1e1e30', alignItems: 'center', justifyContent: 'center' },
+  placeholder: { backgroundColor: '#140a0e', alignItems: 'center', justifyContent: 'center' },
   placeholderIcon: { fontSize: 32 },
   playBadge: {
     position: 'absolute', bottom: 4, left: 4,
@@ -688,8 +688,8 @@ const styles = StyleSheet.create({
   playBadgeIcon: { color: '#fff', fontSize: 10 },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  empty: { color: '#7c7c9b', fontSize: 18 },
-  hint: { color: '#3a3a5c', fontSize: 14, marginTop: 8 },
+  empty: { color: '#9a6b7a', fontSize: 18 },
+  hint: { color: '#3a1828', fontSize: 14, marginTop: 8 },
 
   // Viewer
   viewer: { flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
@@ -724,30 +724,30 @@ const styles = StyleSheet.create({
   thumbSelected: { opacity: 0.75 },
   selectOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(124,111,247,0.35)',
+    backgroundColor: 'rgba(192,24,72,0.35)',
     alignItems: 'flex-end', justifyContent: 'flex-end',
     padding: 4,
   },
   selectCheck: {
     width: 22, height: 22, borderRadius: 11,
-    backgroundColor: '#7c6ff7', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#c01848', alignItems: 'center', justifyContent: 'center',
   },
   selectCheckMark: { color: '#fff', fontSize: 13, fontWeight: '700' },
   selectCancelBtn: { paddingRight: 12 },
-  selectCancelText: { color: '#7c6ff7', fontSize: 20 },
+  selectCancelText: { color: '#c01848', fontSize: 20 },
   selectCountTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
   selectBar: {
     flexDirection: 'row',
-    backgroundColor: '#1e1e30',
+    backgroundColor: '#140a0e',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#2a2a40',
+    borderTopColor: '#28101c',
     paddingVertical: 12,
     paddingHorizontal: 16,
     gap: 10,
     justifyContent: 'flex-end',
   },
   selectBarBtn: {
-    backgroundColor: '#2a2a40',
+    backgroundColor: '#28101c',
     borderRadius: 14, paddingHorizontal: 20, paddingVertical: 10,
   },
   selectBarBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
@@ -757,27 +757,27 @@ const styles = StyleSheet.create({
   // Move modal
   moveModalBg: { flex: 1, justifyContent: 'flex-end' },
   moveModalSheet: {
-    backgroundColor: '#1e1e30',
+    backgroundColor: '#140a0e',
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingTop: 20, paddingBottom: 40, maxHeight: '60%',
   },
   moveModalTitle: {
-    color: '#7c7c9b', fontSize: 13, fontWeight: '600',
+    color: '#9a6b7a', fontSize: 13, fontWeight: '600',
     textTransform: 'uppercase', textAlign: 'center',
     marginBottom: 8, letterSpacing: 0.5,
   },
   moveModalOption: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     paddingHorizontal: 24, paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#2a2a40',
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#28101c',
   },
   moveModalOptionIcon: { fontSize: 22 },
   moveModalOptionText: { color: '#fff', fontSize: 16 },
   moveModalCancelBtn: {
     marginTop: 8, marginHorizontal: 16, borderRadius: 14,
-    backgroundColor: '#2a2a40', paddingVertical: 14, alignItems: 'center',
+    backgroundColor: '#28101c', paddingVertical: 14, alignItems: 'center',
   },
-  moveModalCancelText: { color: '#7c7c9b', fontSize: 16, fontWeight: '600' },
+  moveModalCancelText: { color: '#9a6b7a', fontSize: 16, fontWeight: '600' },
 
   // Modal
   modalOverlay: {
@@ -785,25 +785,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   modalBox: {
-    backgroundColor: '#1e1e30', borderRadius: 16,
+    backgroundColor: '#140a0e', borderRadius: 16,
     padding: 24, width: width * 0.8, gap: 16,
   },
   modalTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
   modalInput: {
-    backgroundColor: '#0f0f1a', borderRadius: 10,
+    backgroundColor: '#080608', borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 10,
     color: '#fff', fontSize: 16,
-    borderWidth: 1, borderColor: '#3a3a5c',
+    borderWidth: 1, borderColor: '#3a1828',
   },
   modalActions: { flexDirection: 'row', gap: 12 },
   modalCancel: {
     flex: 1, paddingVertical: 12, borderRadius: 10,
-    backgroundColor: '#2a2a40', alignItems: 'center',
+    backgroundColor: '#28101c', alignItems: 'center',
   },
-  modalCancelText: { color: '#7c7c9b', fontSize: 15 },
+  modalCancelText: { color: '#9a6b7a', fontSize: 15 },
   modalConfirm: {
     flex: 1, paddingVertical: 12, borderRadius: 10,
-    backgroundColor: '#7c6ff7', alignItems: 'center',
+    backgroundColor: '#c01848', alignItems: 'center',
   },
   modalConfirmText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });

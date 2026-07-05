@@ -167,7 +167,7 @@ export default function ImportScreen() {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#7c6ff7" />
+          <ActivityIndicator size="large" color="#c01848" />
           <Text style={styles.loadingText}>
             處理中 {progress.done}/{progress.total}
           </Text>
@@ -228,36 +228,36 @@ export default function ImportScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
+  container: { flex: 1, backgroundColor: '#080608' },
   header: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16 },
   title: { color: '#ffffff', fontSize: 28, fontWeight: '700' },
   body: { flex: 1, padding: 16, gap: 16 },
   importBtn: {
-    backgroundColor: '#1e1e30',
+    backgroundColor: '#140a0e',
     borderRadius: 20,
     padding: 32,
     alignItems: 'center',
     gap: 10,
   },
-  importIcon: { fontSize: 48, color: '#7c6ff7' },
+  importIcon: { fontSize: 48, color: '#c01848' },
   importTitle: { color: '#ffffff', fontSize: 20, fontWeight: '600' },
-  importDesc: { color: '#7c7c9b', fontSize: 14 },
+  importDesc: { color: '#9a6b7a', fontSize: 14 },
   note: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#1c0f14',
     borderRadius: 12,
     padding: 16,
   },
-  noteText: { color: '#555570', fontSize: 13, lineHeight: 20 },
+  noteText: { color: '#6b4a55', fontSize: 13, lineHeight: 20 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
   loadingText: { color: '#ffffff', fontSize: 18 },
-  loadingHint: { color: '#7c7c9b', fontSize: 13 },
+  loadingHint: { color: '#9a6b7a', fontSize: 13 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   modalBox: {
-    backgroundColor: '#1e1e30',
+    backgroundColor: '#140a0e',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 24,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a40',
+    borderBottomColor: '#28101c',
     gap: 12,
   },
   folderItemIcon: { fontSize: 22 },
@@ -279,8 +279,8 @@ const styles = StyleSheet.create({
   modalCancel: {
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: '#2a2a40',
+    backgroundColor: '#28101c',
     alignItems: 'center',
   },
-  modalCancelText: { color: '#7c7c9b', fontSize: 15 },
+  modalCancelText: { color: '#9a6b7a', fontSize: 15 },
 });

@@ -9,13 +9,13 @@ export default function MainLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0f0f1a',
-          borderTopColor: '#1e1e30',
+          backgroundColor: '#080608',
+          borderTopColor: '#28101c',
           height: 60 + insets.bottom,
           paddingBottom: insets.bottom,
         },
-        tabBarActiveTintColor: '#7c6ff7',
-        tabBarInactiveTintColor: '#555570',
+        tabBarActiveTintColor: '#c01848',
+        tabBarInactiveTintColor: '#6b4a55',
         tabBarLabelStyle: { fontSize: 12, marginBottom: 4 },
       }}
     >
