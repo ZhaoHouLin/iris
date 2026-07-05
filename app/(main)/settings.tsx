@@ -10,15 +10,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   Switch,
+  ScrollView,
 } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/store/authStore';
 import { useMediaStore } from '../../src/store/mediaStore';
 
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const { setupPin, biometricEnabled, setBiometricEnabled } = useAuthStore();
   const { entries, cleanupTempFiles } = useMediaStore();
   const [pinModal, setPinModal] = useState(false);
   const [newPin, setNewPin] = useState('');
+  const [aboutModal, setAboutModal] = useState(false);
 
   const handleSavePin = async () => {
     if (newPin.length < 4) {
@@ -64,9 +69,58 @@ export default function SettingsScreen() {
         />
       </Section>
 
+      <Section title="關於">
+        <Row label="關於 Iris" onPress={() => setAboutModal(true)} showArrow />
+      </Section>
+
       <View style={styles.autoLockNote}>
         <Text style={styles.autoLockNoteText}>移至背景 30 秒後自動鎖定</Text>
       </View>
+
+      {/* About modal */}
+      <Modal visible={aboutModal} transparent animationType="slide" onRequestClose={() => setAboutModal(false)}>
+        <View style={styles.aboutOverlay}>
+          <View style={[styles.aboutSheet, { paddingBottom: 32 + insets.bottom }]}>
+            <TouchableOpacity style={styles.aboutClose} onPress={() => setAboutModal(false)}>
+              <FontAwesome5 name="times" size={16} color="#6b4a55" solid />
+            </TouchableOpacity>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.aboutContent}>
+              {/* Logo area */}
+              <View style={styles.aboutLogoWrap}>
+                <View style={styles.aboutLogoCircle}>
+                  <FontAwesome5 name="eye" size={36} color="#c01848" solid />
+                </View>
+                <Text style={styles.aboutAppName}>Iris</Text>
+                <Text style={styles.aboutAppSub}>Private Vault</Text>
+                <Text style={styles.aboutVersion}>版本 1.0.0</Text>
+              </View>
+
+              <View style={styles.aboutDivider} />
+
+              {/* Security features */}
+              <View style={styles.aboutSection}>
+                <Text style={styles.aboutSectionTitle}>安全性</Text>
+                <AboutRow icon="lock" text="AES-256 加密儲存照片" />
+                <AboutRow icon="fingerprint" text="生物辨識 / PIN 碼解鎖" />
+                <AboutRow icon="clock" text="背景 30 秒後自動鎖定" />
+              </View>
+
+              <View style={styles.aboutSection}>
+                <Text style={styles.aboutSectionTitle}>隱私</Text>
+                <AboutRow icon="eye-slash" text="照片不在系統相簿顯示" />
+                <AboutRow icon="hdd" text="資料僅存於裝置本地" />
+                <AboutRow icon="wifi" text="無網路連線、無雲端上傳" />
+              </View>
+
+              <View style={styles.aboutDivider} />
+
+              <Text style={styles.aboutMadeBy}>企劃　ZhaoHou Lin (ZZ)</Text>
+              <Text style={styles.aboutMadeBy}>設計製作　Claude (Anthropic)</Text>
+              <Text style={styles.aboutCopy}>© 2026 Iris. All rights reserved.</Text>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={pinModal} transparent animationType="slide">
         <KeyboardAvoidingView
@@ -102,6 +156,15 @@ export default function SettingsScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+    </View>
+  );
+}
+
+function AboutRow({ icon, text }: { icon: string; text: string }) {
+  return (
+    <View style={styles.aboutRow}>
+      <FontAwesome5 name={icon} size={14} color="#c01848" solid style={styles.aboutRowIcon} />
+      <Text style={styles.aboutRowText}>{text}</Text>
     </View>
   );
 }
@@ -218,4 +281,41 @@ const styles = StyleSheet.create({
   modalBtnSave: { backgroundColor: '#c01848' },
   modalBtnCancelText: { color: '#9a6b7a', fontSize: 16, fontWeight: '600' },
   modalBtnSaveText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
+
+  // About modal
+  aboutOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  aboutSheet: {
+    backgroundColor: '#0d0508',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: '85%',
+  },
+  aboutClose: {
+    alignSelf: 'flex-end',
+    padding: 20,
+    paddingBottom: 4,
+  },
+  aboutContent: { paddingHorizontal: 28, paddingBottom: 8 },
+  aboutLogoWrap: { alignItems: 'center', paddingVertical: 16, gap: 10 },
+  aboutLogoCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: '#140a0e',
+    borderWidth: 1,
+    borderColor: '#28101c',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aboutAppName: { color: '#ffffff', fontSize: 34, fontWeight: '200', fontStyle: 'italic', letterSpacing: 1.5 },
+  aboutAppSub: { color: '#6b4a55', fontSize: 12, letterSpacing: 3, textTransform: 'uppercase' },
+  aboutVersion: { color: '#3a1828', fontSize: 12, marginTop: 4 },
+  aboutDivider: { height: StyleSheet.hairlineWidth, backgroundColor: '#1c0f14', marginVertical: 24 },
+  aboutSection: { gap: 16, marginBottom: 24 },
+  aboutSectionTitle: { color: '#6b4a55', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 },
+  aboutRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  aboutRowIcon: { width: 20, textAlign: 'center' },
+  aboutRowText: { color: '#c8a8b0', fontSize: 15, flex: 1 },
+  aboutMadeBy: { color: '#3a1828', fontSize: 12, textAlign: 'center', marginBottom: 4 },
+  aboutCopy: { color: '#2a1018', fontSize: 12, textAlign: 'center', paddingBottom: 8 },
 });

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "privatePicApp",
+    "name": "Iris",
     "slug": "privatePicApp",
     "scheme": "privatepicapp",
     "version": "1.0.0",
@@ -16,7 +16,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0f0f1a",
+        "backgroundColor": "#0a0408",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"

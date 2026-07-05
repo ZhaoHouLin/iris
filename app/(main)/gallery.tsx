@@ -578,7 +578,7 @@ export default function GalleryScreen() {
       {/* Header */}
       {currentFolderId === null ? (
         <View style={styles.header}>
-          <Text style={styles.title}>私密相簿</Text>
+          <Text style={styles.brandTitle}>Iris</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {isEditingFolders ? (
               <TouchableOpacity style={styles.addFolderBtn} onPress={() => setIsEditingFolders(false)}>
@@ -773,6 +773,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   title: { color: '#ffffff', fontSize: 28, fontWeight: '700' },
+  brandTitle: { color: '#ffffff', fontSize: 30, fontWeight: '200', fontStyle: 'italic', letterSpacing: 1 },
   addFolderBtn: {
     backgroundColor: '#140a0e',
     borderRadius: 16,

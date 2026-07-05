@@ -1,20 +1,18 @@
-# PrivatePicApp
+# Iris — Private Vault
 
-Android 私密相簿 App，使用 Expo SDK 56 / React Native 0.85.3 開發。
+Android 私密照片與影片保險庫 App，使用 Expo SDK 56 / React Native 0.85.3 開發。
 
 ## 功能概覽
 
-### 已完成
-
 #### 🔐 身份驗證
-- 6 位數 PIN 碼設定與驗證
+- PIN 碼設定與驗證（4–8 位）
 - 生物辨識解鎖（指紋 / 臉部）
 - 背景超過 30 秒自動鎖定（`AppState` 監聽）
 - `AuthGuard`：root layout 層統一管理導航，防止 Tabs 內 `router.replace` 造成 navigation state 錯亂
 
 #### 📥 匯入
 - 從系統相簿多選照片 / 影片
-- 匯入前選擇目標資料夾（可不分類）
+- 匯入前選擇目標資料夾（含「新增資料夾」快速建立）
 - 可選擇匯入後刪除相簿原始檔案
   - Android 13+ 透過 `MediaStore.createDeleteRequest` 觸發系統確認對話框
   - 從 picker 檔名（如 `1000009163.jpg`）直接提取 MediaStore ID，不依賴 `getAssetsAsync`
@@ -24,33 +22,38 @@ Android 私密相簿 App，使用 Expo SDK 56 / React Native 0.85.3 開發。
 - 建立 / 重新命名 / 刪除資料夾
 - 主畫面顯示 2 欄資料夾圖示 grid（點開進入、長按管理）
 - 固定「全部」卡片（顯示所有檔案）
-- 匯入時可指定目標資料夾
+- 匯入時可指定目標資料夾或即時新增
 - 長按照片 / 影片可移動至其他資料夾或移出資料夾
 - 刪除資料夾時，其中的檔案自動移至「全部」
 
 #### 🖼 相簿 Gallery
 - 3 欄縮圖 grid
 - 照片：AES-256-GCM 解密後顯示縮圖
-- 影片：`expo-video-thumbnails` 擷取第 1 秒畫面作為縮圖（需 rebuild 才能啟用 native module）
+- 影片：`expo-video-thumbnails` 擷取第 1 秒畫面作為縮圖
 - 影片縮圖左下角顯示 ▶ 角標
-- 長按縮圖：移至資料夾 / 刪除
+- 長按縮圖進入多選模式：全選、批次刪除、批次還原
+- Tab 切換無卡頓（Zustand JSON 比對避免無謂 re-render）
 
 #### 🔍 照片 / 影片檢視
-- 照片：支援 pinch-to-zoom、雙擊放大/還原、拖曳平移
-  - `GestureHandlerRootView` 放在 Modal 內部（Modal 在 Android 建立獨立 React root）
-  - `Animated.View` + `StyleSheet.absoluteFill` 作為 `GestureDetector` 子元件
-- 影片：`expo-video` 播放器，支援全螢幕
-- 底部 action bar：「🗑 刪除」+ 「↗ 還原到相簿」
+- 照片：pinch-to-zoom、雙擊放大/還原、拖曳平移、左右滑動切換
+- 影片：`expo-video` 播放器，左右箭頭按鈕切換影片，支援全螢幕
+- 底部操作列：「刪除」+ 「還原到相簿」
+- 全螢幕模式（StatusBar hidden）
 
 #### ↩ 還原到相簿
 - 透過 `expo-media-library` 的 `saveToLibraryAsync` 還原
-- 可選擇「還原並保留」或「還原並刪除（從私密相簿移除）」
+- 可選擇「還原並保留」或「還原並刪除（從 Iris 移除）」
 
 #### ⚙️ 設定
 - 變更 PIN 碼
 - 生物辨識解鎖開關
 - 清除解密暫存
-- 說明：移至背景 30 秒後自動鎖定
+- 關於 Iris：功能介紹、隱私聲明、版本資訊
+
+#### 🎨 品牌識別
+- App 名稱：Iris
+- 圖示：6 葉片相機光圈（純 Node.js 生成，無額外依賴）
+- 色系：`#080608` 近黑 / `#c01848` 深紅 / `#9a6b7a` 玫瑰灰
 
 ---
 
@@ -100,9 +103,17 @@ src/
 
 ## 已知問題 / 待辦
 
-- [x] **影片縮圖**：`expo-video-thumbnails` 已啟用（需 `npx expo run:android` rebuild 一次）
 - [ ] 影片目前不加密，依賴 Android App 私有目錄隔離
 - [ ] 大量照片時縮圖載入無進度提示
+
+## 製作團隊
+
+| 角色 | 人員 |
+|---|---|
+| 企劃 / Product Owner | ZhaoHou Lin (ZZ) |
+| 設計 / 開發 | Claude (Anthropic) |
+
+---
 
 ## 開發環境
 
@@ -116,13 +127,16 @@ Java           JBR（Android Studio 內附）
 ### 執行方式
 
 ```powershell
-# 首次 / 新增 native 套件後
+# 首次 / 修改 app.json / 新增 native 套件後（重新打包）
 $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
 npx expo run:android
 
-# JS 異動只需重新載入
+# 純 JS 異動，熱更新即可
 npx expo start
+
+# 重新生成 App 圖示
+node scripts/generate-icons.js
 ```
 
 ## 主要依賴
